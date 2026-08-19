@@ -176,19 +176,22 @@ function renderDashboard() {
   const activeAlerts = (p.alertas || []).filter(a => !a.estado || a.estado === 'activa');
 
   mainContent.innerHTML = `
-    <!-- Active Alerts (Matching 1.png) -->
-    ${activeAlerts.map(a => `
-      <div class="alert-box ${a.tipo}" onclick="openAlertActionModal('${a.id}')">
-        <div class="alert-icon-wrap">
-          <span>${a.tipo === 'critica' ? '⚠️' : '🔔'}</span>
-        </div>
-        <div class="alert-content">
-          <div class="alert-title">${escapeHtml(a.titulo)}</div>
-          <div class="alert-desc">${escapeHtml(a.descripcion)}</div>
-        </div>
-        <span class="alert-tag">ALERTA</span>
+    <!-- Ultra-Compact Active Alerts Container (Takes minimum vertical space) -->
+    ${activeAlerts.length > 0 ? `
+      <div class="alerts-compact-container">
+        ${activeAlerts.map(a => `
+          <div class="alert-compact-row ${a.tipo}" onclick="openAlertActionModal('${a.id}')" title="Clic para gestionar alerta">
+            <div class="alert-compact-left">
+              <div class="alert-compact-icon">
+                <span>${a.tipo === 'critica' ? '⚠️' : '🔔'}</span>
+              </div>
+              <span class="alert-compact-title">${escapeHtml(a.titulo)}</span>
+            </div>
+            <span class="alert-compact-tag">ALERTA</span>
+          </div>
+        `).join('')}
       </div>
-    `).join('')}
+    ` : ''}
 
     <!-- Blue Gradient Ficha Médica Card (Matching 1.png) -->
     <div class="ficha-medica-card">
