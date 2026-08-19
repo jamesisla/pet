@@ -88,35 +88,38 @@ sudo bash deploy.sh
 
 ### Paso 5: Configurar Nginx y Certificado SSL (HTTPS) para `pet.oci.lat`
 
-Para servir el tráfico web en el puerto estándar 80/443 con certificado SSL gratuito (Let's Encrypt):
+#### A. Si estás en **Alpine Linux**:
+```bash
+# 1. Instalar Nginx y Certbot
+sudo apk update && sudo apk add nginx certbot certbot-nginx
 
-1. **Instalar Nginx y Certbot** (si no están instalados):
-   ```bash
-   # Ubuntu / Debian
-   sudo apt update && sudo apt install -y nginx certbot python3-certbot-nginx
+# 2. Crear directorios y copiar configuración (En Alpine se usa http.d)
+sudo mkdir -p /etc/nginx/http.d /etc/nginx/conf.d
+sudo cp pet.oci.lat.conf /etc/nginx/http.d/pet.oci.lat.conf
 
-   # Alpine Linux
-   # sudo apk add nginx certbot
-   ```
+# 3. Iniciar y habilitar Nginx en OpenRC
+sudo rc-update add nginx default
+sudo rc-service nginx restart
 
-2. **Copiar la configuración del servidor**:
-   ```bash
-   sudo cp pet.oci.lat.conf /etc/nginx/conf.d/pet.oci.lat.conf
-   # O en Ubuntu:
-   # sudo cp pet.oci.lat.conf /etc/nginx/sites-available/pet.oci.lat
-   # sudo ln -s /etc/nginx/sites-available/pet.oci.lat /etc/nginx/sites-enabled/
-   ```
+# 4. Obtener Certificado SSL Gratuito
+sudo certbot --nginx -d pet.oci.lat
+```
 
-3. **Verificar y recargar Nginx**:
-   ```bash
-   sudo nginx -t
-   sudo systemctl reload nginx   # O en Alpine: sudo rc-service nginx reload
-   ```
+#### B. Si estás en **Ubuntu / Debian**:
+```bash
+# 1. Instalar Nginx y Certbot
+sudo apt update && sudo apt install -y nginx certbot python3-certbot-nginx
 
-4. **Obtener Certificado SSL Gratuito**:
-   ```bash
-   sudo certbot --nginx -d pet.oci.lat --non-interactive --agree-tos -m tu-email@ejemplo.com
-   ```
+# 2. Copiar configuración
+sudo mkdir -p /etc/nginx/conf.d
+sudo cp pet.oci.lat.conf /etc/nginx/conf.d/pet.oci.lat.conf
+
+# 3. Recargar Nginx
+sudo nginx -t && sudo systemctl reload nginx
+
+# 4. Obtener Certificado SSL Gratuito
+sudo certbot --nginx -d pet.oci.lat
+```
 
 ¡Listo! Tu aplicación estará disponible de forma segura y ultrarrápida en **`https://pet.oci.lat`**.
 
