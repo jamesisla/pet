@@ -14,7 +14,7 @@ let searchQueries = {
 };
 
 // ----------------------------------------------------
-// Vector SVG Icon Definitions (High-End Vector Graphics)
+// Vector SVG Icon Suite (High-End MedTech UI)
 // ----------------------------------------------------
 const Icons = {
   home: `<svg class="svg-icon" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
@@ -32,7 +32,8 @@ const Icons = {
   alert_triangle: `<svg class="svg-icon" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
   id_card: `<svg class="svg-icon" viewBox="0 0 24 24"><rect width="18" height="14" x="3" y="5" rx="2"/><path d="M7 10h2"/><path d="M7 14h6"/><circle cx="15" cy="10" r="1"/></svg>`,
   chevron_right: `<svg class="svg-icon" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>`,
-  phone: `<svg class="svg-icon-sm" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`
+  phone: `<svg class="svg-icon-sm" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`,
+  camera: `<svg class="svg-icon-sm" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>`
 };
 
 // DOM Elements
@@ -45,7 +46,7 @@ const modalCard = document.getElementById('modalCard');
 const toastContainer = document.getElementById('toastContainer');
 
 // ----------------------------------------------------
-// UX Enhancement 1: Non-Blocking Toast Notifications
+// Core UX Notifications & Dialogs
 // ----------------------------------------------------
 function showToast(message, type = 'success') {
   const toast = document.createElement('div');
@@ -70,9 +71,6 @@ function showToast(message, type = 'success') {
   }, 3200);
 }
 
-// ----------------------------------------------------
-// UX Enhancement 2: Sleek In-App Confirm Dialog
-// ----------------------------------------------------
 function showConfirmDialog({ title, message, confirmText = 'Eliminar', onConfirm }) {
   modalCard.innerHTML = `
     <div class="sheet-drag-handle"></div>
@@ -99,9 +97,7 @@ function showConfirmDialog({ title, message, confirmText = 'Eliminar', onConfirm
   });
 }
 
-// ----------------------------------------------------
-// UX Enhancement 3: Dynamic Relative Time Calculation
-// ----------------------------------------------------
+// Relative time calculation
 function getRelativeTimeBadge(dateStr) {
   if (!dateStr || dateStr === 'N/A') return '';
   
@@ -132,6 +128,29 @@ function getRelativeTimeBadge(dateStr) {
     const months = Math.round(diffDays / 30);
     return `<span class="expiry-pill expiry-green">✓ En ${months} meses</span>`;
   }
+}
+
+// ----------------------------------------------------
+// File Upload Helper (Production Ready)
+// ----------------------------------------------------
+async function uploadFileToServer(fileInput) {
+  if (!fileInput || !fileInput.files || fileInput.files.length === 0) return null;
+  const file = fileInput.files[0];
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const res = await fetch('/api/upload', {
+    method: 'POST',
+    body: formData
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || 'Error al subir archivo');
+  }
+
+  const data = await res.json();
+  return data.url;
 }
 
 // Theme Management
@@ -451,7 +470,7 @@ function renderConsultas() {
           </div>
           <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; color:var(--text-muted); margin-top:6px; border-top:1px solid var(--border-light); padding-top:6px;">
             <span>👨‍⚕️ ${escapeHtml(d.doctor || 'Médico')} • ${escapeHtml(d.clinica || 'Clínica')}</span>
-            <button style="background:transparent; border:none; color:var(--danger); cursor:pointer; font-size:14px;" onclick="deleteRecord('diagnostico', ${d.ID})">🗑️</button>
+            <button style="background:transparent; border:none; color:var(--danger); cursor:pointer; font-size:14px;" onclick="deleteRecord('diagnostico', ${d.id || d.ID})">🗑️</button>
           </div>
         </div>
       `).join('') : '<p style="color:var(--text-muted); font-size:13px; text-align:center; padding:1rem 0;">No se encontraron consultas registradas.</p>'}
@@ -492,7 +511,7 @@ function renderVacunas() {
             <div>🏷️ <strong>Lote:</strong> ${escapeHtml(v.lote || 'N/A')}</div>
           </div>
           <div style="display:flex; justify-content:flex-end; margin-top:6px; border-top:1px solid var(--border-light); padding-top:6px;">
-            <button style="background:transparent; border:none; color:var(--danger); cursor:pointer; font-size:13px; font-weight:700;" onclick="deleteRecord('vacuna', ${v.ID})">🗑️ Eliminar</button>
+            <button style="background:transparent; border:none; color:var(--danger); cursor:pointer; font-size:13px; font-weight:700;" onclick="deleteRecord('vacuna', ${v.id || v.ID})">🗑️ Eliminar</button>
           </div>
         </div>
       `).join('') : '<p style="color:var(--text-muted); font-size:13px; text-align:center; padding:1rem 0;">No se encontraron vacunas.</p>'}
@@ -523,7 +542,7 @@ function renderDesparasitaciones() {
             <div style="margin-top:2px;">${getRelativeTimeBadge(d.proxima_fecha)}</div>
           </div>
           <div style="display:flex; justify-content:flex-end; margin-top:6px; border-top:1px solid var(--border-light); padding-top:6px;">
-            <button style="background:transparent; border:none; color:var(--danger); cursor:pointer; font-size:13px; font-weight:700;" onclick="deleteRecord('desparasitacion', ${d.ID})">🗑️ Eliminar</button>
+            <button style="background:transparent; border:none; color:var(--danger); cursor:pointer; font-size:13px; font-weight:700;" onclick="deleteRecord('desparasitacion', ${d.id || d.ID})">🗑️ Eliminar</button>
           </div>
         </div>
       `).join('') : '<p style="color:var(--text-muted); font-size:13px; text-align:center; padding:1rem 0;">Sin desparasitaciones registradas.</p>'}
@@ -553,7 +572,7 @@ function renderMedicamentos() {
             <div>⏳ <strong>Duración:</strong> ${escapeHtml(m.duracion)}</div>
           </div>
           <div style="display:flex; justify-content:flex-end; margin-top:6px; border-top:1px solid var(--border-light); padding-top:6px;">
-            <button style="background:transparent; border:none; color:var(--danger); cursor:pointer; font-size:13px; font-weight:700;" onclick="deleteRecord('medicamento', ${m.ID})">🗑️ Eliminar</button>
+            <button style="background:transparent; border:none; color:var(--danger); cursor:pointer; font-size:13px; font-weight:700;" onclick="deleteRecord('medicamento', ${m.id || m.ID})">🗑️ Eliminar</button>
           </div>
         </div>
       `).join('') : '<p style="color:var(--text-muted); font-size:13px; text-align:center; padding:1rem 0;">Sin tratamientos registrados.</p>'}
@@ -578,9 +597,10 @@ function renderLaboratorios() {
             <strong style="font-size:15px; color:var(--text-main);">${escapeHtml(lab.examen)}</strong>
             <span style="font-size:12px; color:var(--text-light); font-weight:700;">${escapeHtml(lab.fecha)}</span>
           </div>
-          <p style="font-size:12.5px; color:var(--text-muted); margin-top:2px;">${escapeHtml(lab.laboratorio)}</p>
-          <div style="font-size:12px; color:var(--secondary); font-weight:800; margin-top:4px;">
-            👉 Ver desglose de ${lab.resultados ? lab.resultados.length : 0} parámetros analizados
+          <p style="font-size:12.5px; color:var(--text-muted); margin-top:2px;">${escapeHtml(lab.laboratorio || 'Laboratorio Clínico')}</p>
+          <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; color:var(--secondary); font-weight:800; margin-top:6px; border-top:1px solid var(--border-light); padding-top:6px;">
+            <span>👉 Ver desglose (${lab.resultados ? lab.resultados.length : 0} parámetros)</span>
+            <button style="background:transparent; border:none; color:var(--danger); cursor:pointer; font-size:13px; font-weight:700;" onclick="event.stopPropagation(); deleteRecord('laboratorio', '${lab.id}')">🗑️</button>
           </div>
         </div>
       `).join('') : '<p style="color:var(--text-muted); font-size:13px; text-align:center; padding:1rem 0;">Sin exámenes de laboratorio.</p>'}
@@ -600,15 +620,16 @@ function renderImagenes() {
 
     <div class="card-section">
       ${(p.imagenes && p.imagenes.length > 0) ? p.imagenes.map(img => `
-        <div class="clinical-record-card" style="cursor:pointer;" onclick="openImageDetailsModal(${img.ID})">
+        <div class="clinical-record-card" style="cursor:pointer;" onclick="openImageDetailsModal(${img.id || img.ID})">
           <div class="clinical-record-top">
             <span class="badge-tag badge-blue">${escapeHtml(img.tipo)}</span>
             <span style="font-size:12px; color:var(--text-light); font-weight:700;">${escapeHtml(img.fecha)}</span>
           </div>
           <strong style="font-size:15px; color:var(--text-main); margin-top:4px;">${escapeHtml(img.nombre)}</strong>
           <p style="font-size:12.5px; color:var(--text-muted);">${escapeHtml(img.indicacion || 'Estudio de control')}</p>
-          <div style="font-size:12px; color:var(--secondary); font-weight:800; margin-top:4px;">
-            👉 Ver radiografía e informe radiológico
+          <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; color:var(--secondary); font-weight:800; margin-top:6px; border-top:1px solid var(--border-light); padding-top:6px;">
+            <span>👉 Ver radiografía e informe</span>
+            <button style="background:transparent; border:none; color:var(--danger); cursor:pointer; font-size:13px; font-weight:700;" onclick="event.stopPropagation(); deleteRecord('imagen', ${img.id || img.ID})">🗑️</button>
           </div>
         </div>
       `).join('') : '<p style="color:var(--text-muted); font-size:13px; text-align:center; padding:1rem 0;">Sin imágenes registradas.</p>'}
@@ -646,7 +667,7 @@ function renderDiario() {
           <p style="font-size:13px; color:var(--text-muted); margin-top:4px;">${escapeHtml(d.nota || 'Sin observaciones')}</p>
           <div style="display:flex; justify-content:space-between; align-items:center; font-size:11.5px; color:var(--text-light); border-top:1px solid var(--border-light); padding-top:6px; margin-top:4px;">
             <span>📅 ${escapeHtml(d.fecha)}</span>
-            <button style="background:transparent; border:none; color:var(--danger); cursor:pointer; font-size:13px; font-weight:700;" onclick="deleteRecord('sintoma', ${d.ID})">🗑️ Eliminar</button>
+            <button style="background:transparent; border:none; color:var(--danger); cursor:pointer; font-size:13px; font-weight:700;" onclick="deleteRecord('sintoma', ${d.id || d.ID})">🗑️ Eliminar</button>
           </div>
         </div>
       `).join('') : '<p style="color:var(--text-muted); font-size:13px; text-align:center; padding:1rem 0;">No se encontraron síntomas anotados.</p>'}
@@ -673,7 +694,7 @@ function renderPeso() {
             </div>
             <div style="display:flex; align-items:center; gap:0.75rem;">
               <span style="font-family:var(--font-mono); font-weight:900; color:var(--primary); font-size:15px;">${reg.peso} kg</span>
-              <button style="background:transparent; border:none; color:var(--danger); cursor:pointer; font-size:14px;" onclick="deleteRecord('peso', ${reg.ID})">🗑️</button>
+              <button style="background:transparent; border:none; color:var(--danger); cursor:pointer; font-size:14px;" onclick="deleteRecord('peso', ${reg.id || reg.ID})">🗑️</button>
             </div>
           </div>
         `).join('') : '<p style="color:var(--text-muted); font-size:13px; text-align:center; padding:1rem 0;">Sin pesajes registrados.</p>'}
@@ -729,6 +750,18 @@ function renderPerfil() {
           <span>Ficha de Identificación</span>
         </div>
       </div>
+
+      <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.25rem;">
+        <img src="${p.foto || '/static/favicon.svg'}" id="profilePreviewImg" style="width:64px; height:64px; border-radius:50%; object-fit:cover; border:2px solid var(--secondary);" onerror="this.src='/static/favicon.svg'">
+        <div>
+          <label class="btn-action-primary" style="background:var(--bg-surface); color:var(--text-main); cursor:pointer; font-size:12px; padding:0.4rem 0.8rem; display:inline-flex; align-items:center; gap:4px;">
+            ${Icons.camera} Cambiar Foto
+            <input type="file" id="petAvatarFile" accept="image/*" style="display:none;" onchange="handleAvatarFileChange(event)">
+          </label>
+          <span id="uploadAvatarStatus" style="font-size:11px; color:var(--text-muted); display:block; margin-top:4px;">Formatos: JPG, PNG, WEBP</span>
+        </div>
+      </div>
+
       <form onsubmit="handleSavePetProfile(event)">
         <div class="form-grid-2">
           <div class="form-group">
@@ -798,6 +831,28 @@ function renderPerfil() {
       </form>
     </div>
   `;
+}
+
+// Handle Pet Avatar Change from File
+async function handleAvatarFileChange(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const status = document.getElementById('uploadAvatarStatus');
+  status.textContent = 'Subiendo imagen...';
+
+  try {
+    const uploadedUrl = await uploadFileToServer(e.target);
+    if (uploadedUrl) {
+      document.getElementById('profilePreviewImg').src = uploadedUrl;
+      activePet.foto = uploadedUrl;
+      status.textContent = '✓ Foto subida. Guarda cambios para confirmar.';
+      showToast('Foto cargada exitosamente', 'success');
+    }
+  } catch (err) {
+    status.textContent = 'Error: ' + err.message;
+    showToast(err.message, 'danger');
+  }
 }
 
 // Live Search Filter Handler
@@ -1095,7 +1150,7 @@ function openAddRecordModal(type) {
     fields = `
       <div class="form-group">
         <label class="form-label">Nombre del Examen</label>
-        <input type="text" class="form-input" id="fExamen" placeholder="Hemograma Completo" required>
+        <input type="text" class="form-input" id="fExamen" placeholder="Hemograma Completo / Bioquímica" required>
       </div>
       <div class="form-grid-2">
         <div class="form-group">
@@ -1104,8 +1159,19 @@ function openAddRecordModal(type) {
         </div>
         <div class="form-group">
           <label class="form-label">Laboratorio</label>
-          <input type="text" class="form-input" id="fLab" placeholder="Veterinary Diagnostics">
+          <input type="text" class="form-input" id="fLab" placeholder="Laboratorio Central">
         </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Parámetro Principal</label>
+        <div class="form-grid-2">
+          <input type="text" class="form-input" id="fParamNombre" placeholder="Parámetro (ej: Hematocrito)">
+          <input type="text" class="form-input" id="fParamResultado" placeholder="Resultado (ej: 42 %)">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notas Generales</label>
+        <textarea class="form-textarea" id="fNotasLab" placeholder="Observaciones del analista..."></textarea>
       </div>
     `;
   } else if (type === 'imagen') {
@@ -1117,6 +1183,7 @@ function openAddRecordModal(type) {
           <select class="form-select" id="fTipo">
             <option value="Radiografía">Radiografía</option>
             <option value="Ecografía">Ecografía</option>
+            <option value="Tomografía">Tomografía</option>
           </select>
         </div>
         <div class="form-group">
@@ -1126,7 +1193,11 @@ function openAddRecordModal(type) {
       </div>
       <div class="form-group">
         <label class="form-label">Estudio</label>
-        <input type="text" class="form-input" id="fNombre" placeholder="Radiografía de Abdomen" required>
+        <input type="text" class="form-input" id="fNombre" placeholder="Radiografía de Tórax / Ecografía" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Subir Archivo de Imagen / Radiografía</label>
+        <input type="file" class="form-input" id="fImageFile" accept="image/*,.pdf">
       </div>
       <div class="form-group">
         <label class="form-label">Informe Radiológico</label>
@@ -1141,7 +1212,7 @@ function openAddRecordModal(type) {
     <h3 class="sheet-title">${title}</h3>
     <form onsubmit="handleSaveRecord(event, '${type}')">
       ${fields}
-      <button type="submit" class="btn-action-primary" style="width:100%; padding:0.8rem; margin-top:0.5rem;">+ Guardar Registro</button>
+      <button type="submit" id="saveRecordSubmitBtn" class="btn-action-primary" style="width:100%; padding:0.8rem; margin-top:0.5rem;">+ Guardar Registro</button>
     </form>
   `;
   modalBackdrop.style.display = 'flex';
@@ -1149,95 +1220,139 @@ function openAddRecordModal(type) {
 
 async function handleSaveRecord(e, type) {
   e.preventDefault();
+  const submitBtn = document.getElementById('saveRecordSubmitBtn');
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Guardando...';
+  }
+
   let url = `/api/pets/${activePetId}/`;
   let payload = {};
 
-  if (type === 'vacuna') {
-    url += 'vacunas';
-    payload = {
-      nombre: document.getElementById('fNombre').value.trim(),
-      fecha: document.getElementById('fFecha').value.trim(),
-      proxima_fecha: document.getElementById('fProxFecha').value.trim(),
-      lote: document.getElementById('fLote').value.trim(),
-      estado: 'Aplicada'
-    };
-  } else if (type === 'diagnostico') {
-    url += 'diagnosticos';
-    payload = {
-      fecha: document.getElementById('fFecha').value.trim(),
-      tipo: document.getElementById('fTipo').value,
-      descripcion: document.getElementById('fDesc').value.trim(),
-      doctor: document.getElementById('fDoctor').value.trim(),
-      estado: 'Resuelto'
-    };
-  } else if (type === 'desparasitacion') {
-    url += 'desparasitaciones';
-    payload = {
-      tipo: document.getElementById('fTipo').value,
-      producto: document.getElementById('fProducto').value.trim(),
-      fecha: document.getElementById('fFecha').value.trim(),
-      proxima_fecha: document.getElementById('fProxFecha').value.trim()
-    };
-  } else if (type === 'medicamento') {
-    url += 'medicamentos';
-    payload = {
-      nombre: document.getElementById('fNombre').value.trim(),
-      dosis: document.getElementById('fDosis').value.trim(),
-      frecuencia: document.getElementById('fFrec').value.trim(),
-      estado: 'Activo'
-    };
-  } else if (type === 'sintoma') {
-    url += 'sintomas';
-    payload = {
-      fecha: document.getElementById('fFecha').value.trim(),
-      sintoma: document.getElementById('fSintoma').value.trim(),
-      estado: document.getElementById('fEstado').value,
-      nota: document.getElementById('fNota').value.trim()
-    };
-  } else if (type === 'peso') {
-    url += 'peso';
-    payload = {
-      fecha: document.getElementById('fFecha').value.trim(),
-      peso: parseFloat(document.getElementById('fPesoNum').value)
-    };
-  } else if (type === 'alerta') {
-    url += 'alertas';
-    payload = {
-      tipo: document.getElementById('fTipo').value,
-      titulo: document.getElementById('fTitulo').value.toUpperCase().trim(),
-      descripcion: document.getElementById('fDesc').value.trim()
-    };
-  } else if (type === 'laboratorio') {
-    url += 'laboratorios';
-    payload = {
-      examen: document.getElementById('fExamen').value.trim(),
-      fecha: document.getElementById('fFecha').value.trim(),
-      laboratorio: document.getElementById('fLab').value.trim()
-    };
-  } else if (type === 'imagen') {
-    url += 'imagenes';
-    payload = {
-      tipo: document.getElementById('fTipo').value,
-      nombre: document.getElementById('fNombre').value.trim(),
-      fecha: document.getElementById('fFecha').value.trim(),
-      informe: document.getElementById('fInforme').value.trim(),
-      imagen_url: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=400&h=300'
-    };
-  }
-
   try {
+    if (type === 'vacuna') {
+      url += 'vacunas';
+      payload = {
+        nombre: document.getElementById('fNombre').value.trim(),
+        fecha: document.getElementById('fFecha').value.trim(),
+        proxima_fecha: document.getElementById('fProxFecha').value.trim(),
+        lote: document.getElementById('fLote').value.trim(),
+        estado: 'Aplicada'
+      };
+    } else if (type === 'diagnostico') {
+      url += 'diagnosticos';
+      payload = {
+        fecha: document.getElementById('fFecha').value.trim(),
+        tipo: document.getElementById('fTipo').value,
+        descripcion: document.getElementById('fDesc').value.trim(),
+        doctor: document.getElementById('fDoctor').value.trim(),
+        estado: 'Resuelto'
+      };
+    } else if (type === 'desparasitacion') {
+      url += 'desparasitaciones';
+      payload = {
+        tipo: document.getElementById('fTipo').value,
+        producto: document.getElementById('fProducto').value.trim(),
+        fecha: document.getElementById('fFecha').value.trim(),
+        proxima_fecha: document.getElementById('fProxFecha').value.trim()
+      };
+    } else if (type === 'medicamento') {
+      url += 'medicamentos';
+      payload = {
+        nombre: document.getElementById('fNombre').value.trim(),
+        dosis: document.getElementById('fDosis').value.trim(),
+        frecuencia: document.getElementById('fFrec').value.trim(),
+        estado: 'Activo'
+      };
+    } else if (type === 'sintoma') {
+      url += 'sintomas';
+      payload = {
+        fecha: document.getElementById('fFecha').value.trim(),
+        sintoma: document.getElementById('fSintoma').value.trim(),
+        estado: document.getElementById('fEstado').value,
+        nota: document.getElementById('fNota').value.trim()
+      };
+    } else if (type === 'peso') {
+      url += 'peso';
+      payload = {
+        fecha: document.getElementById('fFecha').value.trim(),
+        peso: parseFloat(document.getElementById('fPesoNum').value)
+      };
+    } else if (type === 'alerta') {
+      url += 'alertas';
+      payload = {
+        tipo: document.getElementById('fTipo').value,
+        titulo: document.getElementById('fTitulo').value.toUpperCase().trim(),
+        descripcion: document.getElementById('fDesc').value.trim()
+      };
+    } else if (type === 'laboratorio') {
+      url += 'laboratorios';
+      const paramName = (document.getElementById('fParamNombre')?.value || '').trim();
+      const paramVal = (document.getElementById('fParamResultado')?.value || '').trim();
+      
+      const resultados = [];
+      if (paramName) {
+        resultados.push({
+          id: 1,
+          nombre: paramName,
+          resultado: paramVal || 'Normal',
+          unidad: '',
+          rango_referencia: 'Estándar',
+          estado: 'Normal'
+        });
+      }
+
+      payload = {
+        examen: document.getElementById('fExamen').value.trim(),
+        fecha: document.getElementById('fFecha').value.trim(),
+        laboratorio: document.getElementById('fLab').value.trim(),
+        notas_generales: document.getElementById('fNotasLab')?.value.trim() || '',
+        resultados: resultados
+      };
+    } else if (type === 'imagen') {
+      url += 'imagenes';
+      let uploadedUrl = 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=400&h=300';
+      
+      const fileInput = document.getElementById('fImageFile');
+      if (fileInput && fileInput.files && fileInput.files.length > 0) {
+        try {
+          const resUpload = await uploadFileToServer(fileInput);
+          if (resUpload) uploadedUrl = resUpload;
+        } catch (uErr) {
+          console.warn('Upload error, using fallback:', uErr);
+        }
+      }
+
+      payload = {
+        tipo: document.getElementById('fTipo').value,
+        nombre: document.getElementById('fNombre').value.trim(),
+        fecha: document.getElementById('fFecha').value.trim(),
+        informe: document.getElementById('fInforme').value.trim(),
+        imagen_url: uploadedUrl
+      };
+    }
+
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
+
     if (res.ok) {
       closeModal();
       showToast('Registro guardado exitosamente', 'success');
       await loadActivePet(activePetId);
+    } else {
+      const err = await res.json();
+      showToast(err.detail || 'Error al guardar', 'danger');
     }
   } catch (err) {
     showToast('Error al guardar: ' + err.message, 'danger');
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = '+ Guardar Registro';
+    }
   }
 }
 
@@ -1263,6 +1378,8 @@ function deleteRecord(type, id) {
         if (res.ok) {
           showToast('Registro eliminado', 'info');
           await loadActivePet(activePetId);
+        } else {
+          showToast('Error al eliminar', 'danger');
         }
       } catch (err) {
         showToast('Error al eliminar: ' + err.message, 'danger');
@@ -1284,7 +1401,7 @@ function openDigitalPassportModal() {
     
     <div class="passport-card">
       <div style="display:flex; align-items:center; justify-content:center; gap:0.75rem; margin-bottom:0.5rem;">
-        <img src="${p.foto}" style="width:52px; height:52px; border-radius:50%; object-fit:cover; border:2px solid #00AEEF;" onerror="this.src='/static/favicon.svg'">
+        <img src="${p.foto || '/static/favicon.svg'}" style="width:52px; height:52px; border-radius:50%; object-fit:cover; border:2px solid #00AEEF;" onerror="this.src='/static/favicon.svg'">
         <div style="text-align:left;">
           <h4 style="font-size:18px; font-weight:900; margin:0;">${escapeHtml(p.nombre)}</h4>
           <span style="font-size:12px; color:var(--text-muted);">${escapeHtml(p.especie)} • ${escapeHtml(p.raza)}</span>
@@ -1327,7 +1444,7 @@ function openPetSwitcherModal() {
       ${petsList.map(p => `
         <div style="display:flex; align-items:center; justify-content:space-between; padding:0.75rem 1rem; border-radius:var(--radius-md); background:${p.id === activePetId ? '#e0f7fe' : 'var(--bg-surface)'}; cursor:pointer;" onclick="loadActivePet('${p.id}'); closeModal();">
           <div style="display:flex; align-items:center; gap:0.75rem;">
-            <img src="${p.foto}" style="width:36px; height:36px; border-radius:50%; object-fit:cover;" onerror="this.src='/static/favicon.svg'">
+            <img src="${p.foto || '/static/favicon.svg'}" style="width:36px; height:36px; border-radius:50%; object-fit:cover;" onerror="this.src='/static/favicon.svg'">
             <div>
               <strong style="font-size:15px; color:${p.id === activePetId ? 'var(--secondary)' : 'var(--text-main)'};">${escapeHtml(p.nombre)}</strong>
               <div style="font-size:12px; color:var(--text-muted);">${escapeHtml(p.especie)} • ${escapeHtml(p.raza)}</div>
@@ -1342,7 +1459,7 @@ function openPetSwitcherModal() {
   modalBackdrop.style.display = 'flex';
 }
 
-// Add Pet Modal
+// Add Pet Modal with Photo Upload
 function openAddPetModal() {
   modalCard.innerHTML = `
     <div class="sheet-drag-handle"></div>
@@ -1373,7 +1490,11 @@ function openAddPetModal() {
           <input type="text" class="form-input" id="npEdad" placeholder="Ej: 2 años">
         </div>
       </div>
-      <button type="submit" class="btn-action-primary" style="width:100%; padding:0.8rem; margin-top:0.5rem;">+ Crear Ficha Clínica</button>
+      <div class="form-group">
+        <label class="form-label">Foto de la Mascota</label>
+        <input type="file" class="form-input" id="npFotoFile" accept="image/*">
+      </div>
+      <button type="submit" id="createPetSubmitBtn" class="btn-action-primary" style="width:100%; padding:0.8rem; margin-top:0.5rem;">+ Crear Ficha Clínica</button>
     </form>
   `;
   modalBackdrop.style.display = 'flex';
@@ -1381,6 +1502,23 @@ function openAddPetModal() {
 
 async function handleCreateNewPet(e) {
   e.preventDefault();
+  const submitBtn = document.getElementById('createPetSubmitBtn');
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Creando ficha...';
+  }
+
+  let photoUrl = 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&q=80&w=300';
+  const fileInput = document.getElementById('npFotoFile');
+  if (fileInput && fileInput.files && fileInput.files.length > 0) {
+    try {
+      const resUpload = await uploadFileToServer(fileInput);
+      if (resUpload) photoUrl = resUpload;
+    } catch (uErr) {
+      console.warn('Avatar upload error:', uErr);
+    }
+  }
+
   const payload = {
     nombre: document.getElementById('npNombre').value.trim(),
     especie: document.getElementById('npEspecie').value,
@@ -1388,6 +1526,7 @@ async function handleCreateNewPet(e) {
     edad: document.getElementById('npEdad').value.trim(),
     sexo: 'Macho',
     peso_actual: '10 kg',
+    foto: photoUrl,
     propietario: { nombre: 'Tutor Sania Pet' }
   };
 
@@ -1403,9 +1542,17 @@ async function handleCreateNewPet(e) {
       showToast(`¡Ficha de ${created.nombre} creada con éxito!`, 'success');
       await loadPets();
       await loadActivePet(created.id);
+    } else {
+      const err = await res.json();
+      showToast(err.detail || 'Error al registrar', 'danger');
     }
   } catch (err) {
     showToast('Error al registrar: ' + err.message, 'danger');
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = '+ Crear Ficha Clínica';
+    }
   }
 }
 
@@ -1462,7 +1609,7 @@ function openLabDetailsModal(labId) {
     <button class="sheet-close-btn" onclick="closeModal()">✕</button>
     <h3 class="sheet-title">${escapeHtml(lab.examen)}</h3>
     <p style="font-size:12px; color:var(--text-light); text-align:center; margin-top:-0.75rem; margin-bottom:1rem;">
-      ${escapeHtml(lab.fecha)} • ${escapeHtml(lab.laboratorio)}
+      ${escapeHtml(lab.fecha)} • ${escapeHtml(lab.laboratorio || 'Laboratorio')}
     </p>
 
     <div style="display:flex; flex-direction:column; gap:0.4rem; margin-bottom:1rem;">
@@ -1470,14 +1617,14 @@ function openLabDetailsModal(labId) {
         <div style="display:flex; justify-content:space-between; align-items:center; padding:0.6rem 0.8rem; background:var(--bg-surface); border-radius:var(--radius-sm);">
           <div>
             <strong style="font-size:13px;">${escapeHtml(r.nombre)}</strong>
-            <div style="font-size:11px; color:var(--text-light);">Ref: ${escapeHtml(r.rango_referencia)}</div>
+            <div style="font-size:11px; color:var(--text-light);">Ref: ${escapeHtml(r.rango_referencia || 'Estándar')}</div>
           </div>
           <div style="text-align:right;">
-            <strong style="font-size:14px;">${escapeHtml(r.resultado)} ${escapeHtml(r.unidad)}</strong>
-            <div><span class="badge-tag ${r.estado === 'Normal' ? 'badge-green' : 'badge-red'}" style="font-size:9.5px;">${escapeHtml(r.estado)}</span></div>
+            <strong style="font-size:14px;">${escapeHtml(r.resultado)} ${escapeHtml(r.unidad || '')}</strong>
+            <div><span class="badge-tag ${r.estado === 'Normal' ? 'badge-green' : 'badge-red'}" style="font-size:9.5px;">${escapeHtml(r.estado || 'Normal')}</span></div>
           </div>
         </div>
-      `).join('') : '<p style="color:var(--text-muted); font-size:13px;">Sin parámetros específicos.</p>'}
+      `).join('') : '<p style="color:var(--text-muted); font-size:13px; text-align:center;">Sin parámetros específicos.</p>'}
     </div>
 
     ${lab.notas_generales ? `
@@ -1491,7 +1638,7 @@ function openLabDetailsModal(labId) {
 
 // Medical Image Viewer Modal
 function openImageDetailsModal(imgId) {
-  const img = (activePet.imagenes || []).find(i => i.ID === imgId);
+  const img = (activePet.imagenes || []).find(i => (i.id || i.ID) === imgId);
   if (!img) return;
 
   modalCard.innerHTML = `
@@ -1502,7 +1649,7 @@ function openImageDetailsModal(imgId) {
       ${escapeHtml(img.tipo)} • ${escapeHtml(img.fecha)}
     </p>
 
-    <div style="width:100%; height:200px; border-radius:var(--radius-md); overflow:hidden; background:#000; margin-bottom:1rem;">
+    <div style="width:100%; height:220px; border-radius:var(--radius-md); overflow:hidden; background:#000; margin-bottom:1rem; display:flex; align-items:center; justify-content:center;">
       <img src="${img.imagen_url}" style="width:100%; height:100%; object-fit:contain;" onerror="this.src='/static/favicon.svg'">
     </div>
 
@@ -1525,7 +1672,8 @@ async function handleSavePetProfile(e) {
     sexo: document.getElementById('pSexo').value.trim(),
     microchip: document.getElementById('pMicrochip').value.trim(),
     seguro: document.getElementById('pSeguro').value.trim(),
-    clinica_frecuente: document.getElementById('pClinica').value.trim()
+    clinica_frecuente: document.getElementById('pClinica').value.trim(),
+    foto: activePet.foto || ''
   };
 
   try {

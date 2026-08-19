@@ -1,8 +1,12 @@
 package handler
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"saniv2/internal/model"
 	"saniv2/internal/store"
@@ -11,11 +15,57 @@ import (
 )
 
 type PetHandler struct {
-	store *store.PetStore
+	store    *store.PetStore
+	baseDir  string
 }
 
-func NewPetHandler(s *store.PetStore) *PetHandler {
-	return &PetHandler{store: s}
+func NewPetHandler(s *store.PetStore, baseDir string) *PetHandler {
+	return &PetHandler{store: s, baseDir: baseDir}
+}
+
+// UploadFile handles multipart image/document uploads
+func (h *PetHandler) UploadFile(c *fiber.Ctx) error {
+	file, err := c.FormFile("file")
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"detail": "No se recibió ningún archivo",
+		})
+	}
+
+	ext := strings.ToLower(filepath.Ext(file.Filename))
+	allowed := map[string]bool{
+		".jpg":  true,
+		".jpeg": true,
+		".png":  true,
+		".webp": true,
+		".svg":  true,
+		".gif":  true,
+		".pdf":  true,
+	}
+
+	if !allowed[ext] {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"detail": "Formato de archivo no soportado. Usa JPG, PNG, WEBP o PDF",
+		})
+	}
+
+	uploadDir := filepath.Join(h.baseDir, "web", "static", "uploads")
+	_ = os.MkdirAll(uploadDir, 0755)
+
+	filename := fmt.Sprintf("%d_%s", time.Now().Unix(), filepath.Base(file.Filename))
+	destPath := filepath.Join(uploadDir, filename)
+
+	if err := c.SaveFile(file, destPath); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"detail": "Error al guardar el archivo en el servidor",
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"status":   "success",
+		"filename": filename,
+		"url":      "/static/uploads/" + filename,
+	})
 }
 
 // ListPets returns summarized list of pets

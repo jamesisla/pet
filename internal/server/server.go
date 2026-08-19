@@ -122,11 +122,12 @@ func Run() {
 
 	// Handlers
 	healthHandler := handler.NewHealthHandler(cfg.AppName, "2.0.0")
-	petHandler := handler.NewPetHandler(st)
+	petHandler := handler.NewPetHandler(st, baseDir)
 
 	// API Group
 	api := app.Group("/api")
 	api.Get("/health", healthHandler.Health)
+	api.Post("/upload", petHandler.UploadFile)
 
 	// Pets & Clinical Records API
 	api.Get("/pets", petHandler.ListPets)
