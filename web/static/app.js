@@ -1,118 +1,133 @@
-// State
+// State Management
 let petsList = [];
 let activePetId = 'luna';
 let activePet = null;
 let activeTab = 'dashboard';
 
 // DOM Elements
-const petSwitcher = document.getElementById('petSwitcher');
+const headerPetAvatar = document.getElementById('headerPetAvatar');
+const headerPetName = document.getElementById('headerPetName');
 const mainContent = document.getElementById('mainContent');
-const sidebarAlertCount = document.getElementById('sidebarAlertCount');
+const bottomAlertBadge = document.getElementById('bottomAlertBadge');
 const modalBackdrop = document.getElementById('modalBackdrop');
-const modalContent = document.getElementById('modalContent');
-const themeToggleBtn = document.getElementById('themeToggleBtn');
-const addPetBtn = document.getElementById('addPetBtn');
-const quickAddBtn = document.getElementById('quickAddBtn');
-const mobileFab = document.getElementById('mobileFab');
+const modalCard = document.getElementById('modalCard');
 
 // Theme Management
 function initTheme() {
   const saved = localStorage.getItem('sania_theme') || 'light';
   document.documentElement.setAttribute('data-theme', saved);
-  themeToggleBtn.textContent = saved === 'dark' ? '☀️' : '🌙';
 }
 
-themeToggleBtn.addEventListener('click', () => {
+function toggleTheme() {
   const current = document.documentElement.getAttribute('data-theme');
   const next = current === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', next);
   localStorage.setItem('sania_theme', next);
-  themeToggleBtn.textContent = next === 'dark' ? '☀️' : '🌙';
-});
-
-// Navigation Handlers
-function setupNavigation() {
-  document.querySelectorAll('.nav-item').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const tab = btn.getAttribute('data-tab');
-      switchTab(tab);
-    });
-  });
-
-  document.querySelectorAll('.bottom-nav-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const tab = btn.getAttribute('data-tab');
-      switchTab(tab);
-    });
-  });
 }
 
+// Navigation & Tab Switching
 function switchTab(tab) {
   activeTab = tab;
-  document.querySelectorAll('.nav-item').forEach(btn => {
+  
+  // Update desktop sidebar active state
+  document.querySelectorAll('.desktop-sidebar .sidebar-link').forEach(btn => {
     btn.classList.toggle('active', btn.getAttribute('data-tab') === tab);
   });
-  document.querySelectorAll('.bottom-nav-btn').forEach(btn => {
+
+  // Update mobile bottom bar active state
+  document.querySelectorAll('.mobile-bottom-bar .bar-tab-btn').forEach(btn => {
     btn.classList.toggle('active', btn.getAttribute('data-tab') === tab);
   });
+
   renderCurrentView();
+}
+
+// Smart Contextual Action Click (User Requirement)
+function handleSmartActionClick() {
+  switch (activeTab) {
+    case 'vacunas':
+      openAddRecordModal('vacuna');
+      break;
+    case 'consultas':
+      openAddRecordModal('diagnostico');
+      break;
+    case 'desparasitaciones':
+      openAddRecordModal('desparasitacion');
+      break;
+    case 'medicamentos':
+      openAddRecordModal('medicamento');
+      break;
+    case 'diario':
+      openAddRecordModal('sintoma');
+      break;
+    case 'peso':
+      openAddRecordModal('peso');
+      break;
+    case 'laboratorios':
+      openAddRecordModal('laboratorio');
+      break;
+    case 'imagenes':
+      openAddRecordModal('imagen');
+      break;
+    case 'alertas':
+      openAddRecordModal('alerta');
+      break;
+    case 'perfil':
+      openAddPetModal();
+      break;
+    case 'dashboard':
+    default:
+      // When on home/dashboard, open the "¿Qué deseas registrar?" bottom sheet menu (2.png)
+      openBottomSheetMenu();
+      break;
+  }
 }
 
 // API Calls
 async function loadPets() {
   try {
     const res = await fetch('/api/pets');
-    if (!res.ok) throw new Error('Error cargando mascotas');
+    if (!res.ok) throw new Error('Error al cargar mascotas');
     petsList = await res.json();
     if (petsList.length > 0) {
       if (!petsList.some(p => p.id === activePetId)) {
         activePetId = petsList[0].id;
       }
     }
-    renderPetSwitcher();
     await loadActivePet(activePetId);
   } catch (err) {
     console.error(err);
-    mainContent.innerHTML = `<div class="card"><p style="color:var(--danger)">Error al conectar con la API: ${err.message}</p></div>`;
+    mainContent.innerHTML = `<div class="card-section"><p style="color:var(--danger)">Error al conectar con la API: ${err.message}</p></div>`;
   }
 }
 
 async function loadActivePet(petId) {
   activePetId = petId;
-  renderPetSwitcher();
   try {
     const res = await fetch(`/api/pets/${petId}`);
-    if (!res.ok) throw new Error('Error al obtener ficha de la mascota');
+    if (!res.ok) throw new Error('Error al obtener ficha clínica');
     activePet = await res.json();
-    updateAlertBadges();
+    
+    // Update Header
+    headerPetAvatar.src = activePet.foto || '/static/favicon.svg';
+    headerPetName.textContent = `${activePet.nombre} (${activePet.especie})`;
+    
+    // Update Alert Badge in Bottom Nav
+    const activeAlerts = (activePet.alertas || []).filter(a => !a.estado || a.estado === 'activa');
+    if (activeAlerts.length > 0) {
+      bottomAlertBadge.style.display = 'flex';
+      bottomAlertBadge.textContent = activeAlerts.length;
+    } else {
+      bottomAlertBadge.style.display = 'none';
+    }
+
     renderCurrentView();
   } catch (err) {
     console.error(err);
   }
 }
 
-function updateAlertBadges() {
-  if (!activePet || !activePet.alertas) return;
-  const activeAlerts = activePet.alertas.filter(a => !a.estado || a.estado === 'activa');
-  if (activeAlerts.length > 0) {
-    sidebarAlertCount.style.display = 'inline-block';
-    sidebarAlertCount.textContent = activeAlerts.length;
-  } else {
-    sidebarAlertCount.style.display = 'none';
-  }
-}
-
-// Render Pet Switcher Pills
-function renderPetSwitcher() {
-  petSwitcher.innerHTML = petsList.map(p => `
-    <button class="pet-pill ${p.id === activePetId ? 'active' : ''}" onclick="loadActivePet('${p.id}')">
-      <img src="${p.foto}" alt="${p.nombre}" class="pet-pill-avatar" onerror="this.src='/static/favicon.svg'">
-      <span>${escapeHtml(p.nombre)}</span>
-    </button>
-  `).join('');
-}
-
-// Render Active View
+// Render Main View according to Active Tab
 function renderCurrentView() {
   if (!activePet) return;
 
@@ -155,825 +170,643 @@ function renderCurrentView() {
   }
 }
 
-// 1. Dashboard View
+// 1. Dashboard View (Exact 1.png Layout & Style)
 function renderDashboard() {
   const p = activePet;
   const activeAlerts = (p.alertas || []).filter(a => !a.estado || a.estado === 'activa');
-  const activeMeds = (p.medicamentos || []).filter(m => m.estado === 'Activo');
 
   mainContent.innerHTML = `
-    <!-- Pet Hero Card -->
-    <div class="pet-hero-card">
-      <div class="pet-hero-main">
-        <img src="${p.foto}" alt="${p.nombre}" class="pet-hero-img" onerror="this.src='/static/favicon.svg'">
-        <div>
-          <h1 class="pet-hero-name">${escapeHtml(p.nombre)}</h1>
-          <div class="pet-hero-meta">
-            <span class="hero-pill">${escapeHtml(p.especie)} • ${escapeHtml(p.raza)}</span>
-            <span class="hero-pill">${escapeHtml(p.edad)}</span>
-            <span class="hero-pill">${escapeHtml(p.sexo)}</span>
-          </div>
+    <!-- Active Alerts (Matching 1.png) -->
+    ${activeAlerts.map(a => `
+      <div class="alert-box ${a.tipo}" onclick="openAlertActionModal('${a.id}')">
+        <div class="alert-icon-wrap">
+          <span>${a.tipo === 'critica' ? '⚠️' : '🔔'}</span>
         </div>
+        <div class="alert-content">
+          <div class="alert-title">${escapeHtml(a.titulo)}</div>
+          <div class="alert-desc">${escapeHtml(a.descripcion)}</div>
+        </div>
+        <span class="alert-tag">ALERTA</span>
       </div>
-      <div class="pet-hero-stats">
-        <div class="hero-stat-box">
-          <span class="hero-stat-label">Peso Actual</span>
-          <span class="hero-stat-val">${escapeHtml(p.peso_actual || '-')}</span>
+    `).join('')}
+
+    <!-- Blue Gradient Ficha Médica Card (Matching 1.png) -->
+    <div class="ficha-medica-card">
+      <div class="ficha-top-row">
+        <span class="ficha-badge">Ficha Médica</span>
+        <button class="ficha-arrow-btn" onclick="switchTab('perfil')" title="Ver Perfil Completo">›</button>
+      </div>
+
+      <div class="ficha-pet-name">${escapeHtml(p.nombre)}</div>
+      <div class="ficha-pet-breed">${escapeHtml(p.raza || 'Mascota')} • ${escapeHtml(p.edad || '3 años')}</div>
+
+      <div class="ficha-grid-2x2">
+        <div>
+          <div class="ficha-field-label">Microchip</div>
+          <div class="ficha-field-val">${escapeHtml(p.microchip || '981022300456123')}</div>
         </div>
-        <div class="hero-stat-box">
-          <span class="hero-stat-label">Microchip</span>
-          <span class="hero-stat-val" style="font-size:1rem;">${escapeHtml(p.microchip || 'No registrado')}</span>
+        <div>
+          <div class="ficha-field-label">Seguro Médico</div>
+          <div class="ficha-field-val">${escapeHtml(p.seguro || 'PetPlan Gold (80%...)')}</div>
+        </div>
+        <div>
+          <div class="ficha-field-label">Sexo</div>
+          <div class="ficha-field-val">${escapeHtml(p.sexo || 'Hembra (Esterilizada)')}</div>
+        </div>
+        <div>
+          <div class="ficha-field-label">Clínica Frecuente</div>
+          <div class="ficha-field-val">${escapeHtml(p.clinica_frecuente || 'Hospital Veterinario Sania...')}</div>
         </div>
       </div>
     </div>
 
-    <!-- Active Alerts Banner -->
-    ${activeAlerts.length > 0 ? `
-      <div class="card" style="border-left: 5px solid var(--danger); background: var(--danger-bg);">
-        <div class="card-header" style="margin-bottom:0.75rem;">
-          <div class="card-header-title" style="color:var(--danger);">
-            <span>🚨</span>
-            <span>Alertas y Riesgos Activos (${activeAlerts.length})</span>
-          </div>
-          <button class="btn btn-outline btn-sm" onclick="switchTab('alertas')">Ver todas</button>
-        </div>
-        <div>
-          ${activeAlerts.map(a => `
-            <div class="alert-card ${a.tipo}" onclick="openAlertActionModal('${a.id}')">
-              <div class="alert-icon">${a.tipo === 'critica' ? '⚠️' : '🔔'}</div>
-              <div class="alert-body">
-                <h4>${escapeHtml(a.titulo)}</h4>
-                <p>${escapeHtml(a.descripcion)}</p>
-                <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.35rem;">👉 Clic para gestionar (Solucionar / Posponer)</div>
-              </div>
-            </div>
-          `).join('')}
-        </div>
-      </div>
-    ` : ''}
-
-    <!-- Quick Stats Grid -->
-    <div class="grid-2">
-      <!-- Próximas Inmunizaciones -->
-      <div class="card">
-        <div class="card-header">
-          <div class="card-header-title">
-            <span>💉</span>
-            <span>Inmunización & Vacunas</span>
-          </div>
-          <button class="btn btn-outline btn-sm" onclick="switchTab('vacunas')">Gestionar</button>
-        </div>
-        <div>
-          ${(p.vacunas && p.vacunas.length > 0) ? p.vacunas.slice(0, 3).map(v => `
-            <div style="display:flex; justify-content:space-between; align-items:center; padding:0.6rem 0; border-bottom:1px solid var(--border-color);">
-              <div>
-                <strong style="font-size:0.9rem;">${escapeHtml(v.nombre)}</strong>
-                <div style="font-size:0.75rem; color:var(--text-muted);">Próxima: ${escapeHtml(v.proxima_fecha || 'N/A')}</div>
-              </div>
-              <span class="badge ${v.estado === 'Aplicada' ? 'badge-success' : 'badge-danger'}">${escapeHtml(v.estado)}</span>
-            </div>
-          `).join('') : '<p style="color:var(--text-muted); font-size:0.85rem;">Sin vacunas registradas.</p>'}
-        </div>
-      </div>
-
-      <!-- Medicamentos Activos -->
-      <div class="card">
-        <div class="card-header">
-          <div class="card-header-title">
-            <span>💊</span>
-            <span>Tratamientos Activos</span>
-          </div>
-          <button class="btn btn-outline btn-sm" onclick="switchTab('medicamentos')">Gestionar</button>
-        </div>
-        <div>
-          ${activeMeds.length > 0 ? activeMeds.map(m => `
-            <div style="padding:0.6rem 0; border-bottom:1px solid var(--border-color);">
-              <div style="display:flex; justify-content:space-between;">
-                <strong style="font-size:0.9rem;">${escapeHtml(m.nombre)}</strong>
-                <span class="badge badge-success">Activo</span>
-              </div>
-              <div style="font-size:0.8rem; color:var(--text-muted); margin-top:0.2rem;">
-                ${escapeHtml(m.dosis)} • ${escapeHtml(m.frecuencia)}
-              </div>
-            </div>
-          `).join('') : '<p style="color:var(--text-muted); font-size:0.85rem;">Sin tratamientos activos actualmente.</p>'}
-        </div>
-      </div>
+    <!-- Section Title: Historial Médico -->
+    <div class="section-title-wrap">
+      <span class="section-pulse-icon">⚡</span>
+      <h2 class="section-title">Historial Médico</h2>
     </div>
 
-    <!-- Weight Preview Card -->
-    <div class="card">
-      <div class="card-header">
-        <div class="card-header-title">
-          <span>⚖️</span>
-          <span>Curva de Peso</span>
-        </div>
-        <button class="btn btn-outline btn-sm" onclick="switchTab('peso')">Ver Historial Completo</button>
+    <!-- 2x2 Feature Menu Grid (Matching 1.png) -->
+    <div class="features-grid-2x2">
+      <!-- Consultas -->
+      <div class="feature-menu-card" onclick="switchTab('consultas')">
+        <div class="feature-icon-squircle feature-icon-blue">🩺</div>
+        <div class="feature-card-name">Consultas</div>
+        <div class="feature-card-desc">Historial clínico</div>
       </div>
-      <div class="weight-chart-container">
-        ${renderSVGChart(p.peso_historial)}
+
+      <!-- Vacunas -->
+      <div class="feature-menu-card" onclick="switchTab('vacunas')">
+        <div class="feature-icon-squircle feature-icon-green">🛡️</div>
+        <div class="feature-card-name">Vacunas</div>
+        <div class="feature-card-desc">Próximas y aplicadas</div>
+      </div>
+
+      <!-- Desparasitaciones -->
+      <div class="feature-menu-card" onclick="switchTab('desparasitaciones')">
+        <div class="feature-icon-squircle feature-icon-orange">🪲</div>
+        <div class="feature-card-name">Desparasitaciones</div>
+        <div class="feature-card-desc">Control interno y externo</div>
+      </div>
+
+      <!-- Tratamientos / Medicamentos -->
+      <div class="feature-menu-card" onclick="switchTab('medicamentos')">
+        <div class="feature-icon-squircle feature-icon-purple">💊</div>
+        <div class="feature-card-name">Tratamientos</div>
+        <div class="feature-card-desc">Prescripción o suplemento</div>
+      </div>
+
+      <!-- Laboratorios -->
+      <div class="feature-menu-card" onclick="switchTab('laboratorios')">
+        <div class="feature-icon-squircle feature-icon-pink">🧪</div>
+        <div class="feature-card-name">Laboratorios</div>
+        <div class="feature-card-desc">Exámenes y análisis</div>
+      </div>
+
+      <!-- Imágenes Médicas -->
+      <div class="feature-menu-card" onclick="switchTab('imagenes')">
+        <div class="feature-icon-squircle feature-icon-teal">🩻</div>
+        <div class="feature-card-name">Imágenes</div>
+        <div class="feature-card-desc">Ecografías y rayos X</div>
       </div>
     </div>
   `;
 }
 
-// 2. Consultas & Diagnosticos
+// 2. Consultas View
 function renderConsultas() {
   const p = activePet;
   mainContent.innerHTML = `
-    <div class="card">
-      <div class="card-header">
-        <div class="card-header-title">
+    <div class="card-section">
+      <div class="card-section-header">
+        <div class="card-section-title">
           <span>🩺</span>
-          <span>Consultas & Diagnósticos Clínicos</span>
+          <span>Consultas & Diagnósticos</span>
         </div>
-        <button class="btn btn-primary btn-sm" onclick="openAddRecordModal('diagnostico')">+ Registrar Consulta</button>
+        <button class="btn-action-primary" onclick="openAddRecordModal('diagnostico')">+ Registrar</button>
       </div>
-      <div class="grid-2">
-        ${(p.diagnosticos && p.diagnosticos.length > 0) ? p.diagnosticos.map(d => `
-          <div class="record-card">
-            <div class="record-top">
-              <span class="badge badge-info">${escapeHtml(d.tipo)}</span>
-              <span class="record-date">${escapeHtml(d.fecha)}</span>
-            </div>
-            <div class="record-desc" style="font-weight:700; color:var(--text-main); margin-top:0.4rem;">
-              ${escapeHtml(d.descripcion)}
-            </div>
-            <div class="record-meta">
-              <span class="record-meta-item">👨‍⚕️ ${escapeHtml(d.doctor || 'Médico Veterinario')}</span>
-              <span class="record-meta-item">🏥 ${escapeHtml(d.clinica || 'Hospital Veterinario')}</span>
-              <span class="badge badge-success" style="margin-left:auto;">${escapeHtml(d.estado || 'Resuelto')}</span>
-            </div>
-            <div style="display:flex; justify-content:flex-end; gap:0.35rem; margin-top:0.5rem;">
-              <button class="btn btn-outline btn-sm" onclick="openEditRecordModal('diagnostico', ${d.ID})">✏️ Editar</button>
-              <button class="btn btn-outline btn-sm" style="color:var(--danger);" onclick="deleteRecord('diagnostico', ${d.ID})">🗑️</button>
-            </div>
+
+      ${(p.diagnosticos && p.diagnosticos.length > 0) ? p.diagnosticos.map(d => `
+        <div class="clinical-record-card">
+          <div class="clinical-record-top">
+            <span class="badge-tag badge-blue">${escapeHtml(d.tipo)}</span>
+            <span style="font-size:12px; color:var(--text-light); font-weight:700;">${escapeHtml(d.fecha)}</span>
           </div>
-        `).join('') : '<p style="color:var(--text-muted);">No hay consultas registradas aún.</p>'}
-      </div>
+          <div style="font-size:14px; font-weight:800; color:var(--text-main); margin-top:4px;">
+            ${escapeHtml(d.descripcion)}
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; color:var(--text-muted); margin-top:6px; border-top:1px solid var(--border-light); padding-top:6px;">
+            <span>👨‍⚕️ ${escapeHtml(d.doctor || 'Médico')}</span>
+            <button style="background:transparent; border:none; color:var(--danger); cursor:pointer;" onclick="deleteRecord('diagnostico', ${d.ID})">🗑️</button>
+          </div>
+        </div>
+      `).join('') : '<p style="color:var(--text-muted); font-size:13px;">Sin consultas registradas.</p>'}
     </div>
   `;
 }
 
-// 3. Vacunas
+// 3. Vacunas View
 function renderVacunas() {
   const p = activePet;
   mainContent.innerHTML = `
-    <div class="card">
-      <div class="card-header">
-        <div class="card-header-title">
-          <span>💉</span>
-          <span>Vacunación & Inmunización</span>
+    <div class="card-section">
+      <div class="card-section-header">
+        <div class="card-section-title">
+          <span>🛡️</span>
+          <span>Vacunas & Inmunización</span>
         </div>
-        <button class="btn btn-primary btn-sm" onclick="openAddRecordModal('vacuna')">+ Registrar Vacuna</button>
+        <button class="btn-action-primary" onclick="openAddRecordModal('vacuna')">+ Registrar</button>
       </div>
-      <div class="grid-2">
-        ${(p.vacunas && p.vacunas.length > 0) ? p.vacunas.map(v => `
-          <div class="record-card">
-            <div class="record-top">
-              <strong class="record-title">${escapeHtml(v.nombre)}</strong>
-              <span class="badge ${v.estado === 'Aplicada' ? 'badge-success' : 'badge-danger'}">${escapeHtml(v.estado)}</span>
-            </div>
-            <div class="record-meta" style="border-top:none; padding-top:0;">
-              <div>📅 <strong>Aplicada:</strong> ${escapeHtml(v.fecha)}</div>
-              <div>🎯 <strong>Próxima dosis:</strong> ${escapeHtml(v.proxima_fecha || 'N/A')}</div>
-              <div>🏷️ <strong>Lote:</strong> ${escapeHtml(v.lote || 'N/A')}</div>
-              <div>👨‍⚕️ <strong>Veterinario:</strong> ${escapeHtml(v.veterinario || 'N/A')}</div>
-            </div>
-            <div style="display:flex; justify-content:flex-end; gap:0.35rem; margin-top:0.5rem;">
-              <button class="btn btn-outline btn-sm" onclick="openEditRecordModal('vacuna', ${v.ID})">✏️ Editar</button>
-              <button class="btn btn-outline btn-sm" style="color:var(--danger);" onclick="deleteRecord('vacuna', ${v.ID})">🗑️</button>
-            </div>
+
+      ${(p.vacunas && p.vacunas.length > 0) ? p.vacunas.map(v => `
+        <div class="clinical-record-card">
+          <div class="clinical-record-top">
+            <strong style="font-size:15px; color:var(--text-main);">${escapeHtml(v.nombre)}</strong>
+            <span class="badge-tag ${v.estado === 'Aplicada' ? 'badge-green' : 'badge-red'}">${escapeHtml(v.estado)}</span>
           </div>
-        `).join('') : '<p style="color:var(--text-muted);">No hay vacunas registradas.</p>'}
-      </div>
+          <div style="font-size:12.5px; color:var(--text-muted); line-height:1.5;">
+            <div>📅 <strong>Aplicada:</strong> ${escapeHtml(v.fecha)}</div>
+            <div>🎯 <strong>Próxima dosis:</strong> ${escapeHtml(v.proxima_fecha || 'N/A')}</div>
+            <div>🏷️ <strong>Lote:</strong> ${escapeHtml(v.lote || 'N/A')}</div>
+          </div>
+          <div style="display:flex; justify-content:flex-end; margin-top:4px;">
+            <button style="background:transparent; border:none; color:var(--danger); cursor:pointer;" onclick="deleteRecord('vacuna', ${v.ID})">🗑️ Eliminar</button>
+          </div>
+        </div>
+      `).join('') : '<p style="color:var(--text-muted); font-size:13px;">Sin vacunas registradas.</p>'}
     </div>
   `;
 }
 
-// 4. Desparasitaciones
+// 4. Desparasitaciones View
 function renderDesparasitaciones() {
   const p = activePet;
   mainContent.innerHTML = `
-    <div class="card">
-      <div class="card-header">
-        <div class="card-header-title">
-          <span>🪱</span>
-          <span>Desparasitación Interna y Externa</span>
+    <div class="card-section">
+      <div class="card-section-header">
+        <div class="card-section-title">
+          <span>🪲</span>
+          <span>Desparasitaciones</span>
         </div>
-        <button class="btn btn-primary btn-sm" onclick="openAddRecordModal('desparasitacion')">+ Registrar Desparasitación</button>
+        <button class="btn-action-primary" onclick="openAddRecordModal('desparasitacion')">+ Registrar</button>
       </div>
-      <div class="grid-2">
-        ${(p.desparasitaciones && p.desparasitaciones.length > 0) ? p.desparasitaciones.map(d => `
-          <div class="record-card">
-            <div class="record-top">
-              <strong class="record-title">${escapeHtml(d.producto)}</strong>
-              <span class="badge badge-info">${escapeHtml(d.tipo)}</span>
-            </div>
-            <div class="record-meta" style="border-top:none; padding-top:0;">
-              <div>📅 <strong>Fecha:</strong> ${escapeHtml(d.fecha)}</div>
-              <div>🎯 <strong>Próxima:</strong> ${escapeHtml(d.proxima_fecha || 'N/A')}</div>
-              <div>💊 <strong>Dosis:</strong> ${escapeHtml(d.dosis || 'N/A')} (Peso: ${escapeHtml(d.peso_mascota || '-')})</div>
-              <div>👤 <strong>Aplicado por:</strong> ${escapeHtml(d.veterinario || 'N/A')}</div>
-            </div>
-            <div style="display:flex; justify-content:flex-end; gap:0.35rem; margin-top:0.5rem;">
-              <button class="btn btn-outline btn-sm" onclick="openEditRecordModal('desparasitacion', ${d.ID})">✏️ Editar</button>
-              <button class="btn btn-outline btn-sm" style="color:var(--danger);" onclick="deleteRecord('desparasitacion', ${d.ID})">🗑️</button>
-            </div>
+
+      ${(p.desparasitaciones && p.desparasitaciones.length > 0) ? p.desparasitaciones.map(d => `
+        <div class="clinical-record-card">
+          <div class="clinical-record-top">
+            <strong style="font-size:15px; color:var(--text-main);">${escapeHtml(d.producto)}</strong>
+            <span class="badge-tag badge-amber">${escapeHtml(d.tipo)}</span>
           </div>
-        `).join('') : '<p style="color:var(--text-muted);">No hay desparasitaciones registradas.</p>'}
-      </div>
+          <div style="font-size:12.5px; color:var(--text-muted); line-height:1.5;">
+            <div>📅 <strong>Fecha:</strong> ${escapeHtml(d.fecha)} • 🎯 <strong>Próxima:</strong> ${escapeHtml(d.proxima_fecha || 'N/A')}</div>
+            <div>💊 <strong>Dosis:</strong> ${escapeHtml(d.dosis || '1 dosis')} (Peso: ${escapeHtml(d.peso_mascota || '-')})</div>
+          </div>
+          <div style="display:flex; justify-content:flex-end; margin-top:4px;">
+            <button style="background:transparent; border:none; color:var(--danger); cursor:pointer;" onclick="deleteRecord('desparasitacion', ${d.ID})">🗑️ Eliminar</button>
+          </div>
+        </div>
+      `).join('') : '<p style="color:var(--text-muted); font-size:13px;">Sin desparasitaciones registradas.</p>'}
     </div>
   `;
 }
 
-// 5. Medicamentos
+// 5. Medicamentos View
 function renderMedicamentos() {
   const p = activePet;
   mainContent.innerHTML = `
-    <div class="card">
-      <div class="card-header">
-        <div class="card-header-title">
+    <div class="card-section">
+      <div class="card-section-header">
+        <div class="card-section-title">
           <span>💊</span>
-          <span>Medicamentos & Prescripciones</span>
+          <span>Tratamientos & Medicamentos</span>
         </div>
-        <button class="btn btn-primary btn-sm" onclick="openAddRecordModal('medicamento')">+ Registrar Medicamento</button>
+        <button class="btn-action-primary" onclick="openAddRecordModal('medicamento')">+ Registrar</button>
       </div>
-      <div class="grid-2">
-        ${(p.medicamentos && p.medicamentos.length > 0) ? p.medicamentos.map(m => `
-          <div class="record-card">
-            <div class="record-top">
-              <strong class="record-title">${escapeHtml(m.nombre)}</strong>
-              <span class="badge ${m.estado === 'Activo' ? 'badge-success' : 'badge-info'}">${escapeHtml(m.estado)}</span>
-            </div>
-            <div class="record-meta" style="border-top:none; padding-top:0;">
-              <div>💊 <strong>Dosis:</strong> ${escapeHtml(m.dosis)}</div>
-              <div>⏰ <strong>Frecuencia:</strong> ${escapeHtml(m.frecuencia)}</div>
-              <div>⏳ <strong>Duración:</strong> ${escapeHtml(m.duracion)}</div>
-              <div>👨‍⚕️ <strong>Prescrito por:</strong> ${escapeHtml(m.veterinario || 'Veterinario')}</div>
-            </div>
-            <div style="display:flex; justify-content:flex-end; gap:0.35rem; margin-top:0.5rem;">
-              <button class="btn btn-outline btn-sm" onclick="openEditRecordModal('medicamento', ${m.ID})">✏️ Editar</button>
-              <button class="btn btn-outline btn-sm" style="color:var(--danger);" onclick="deleteRecord('medicamento', ${m.ID})">🗑️</button>
-            </div>
+
+      ${(p.medicamentos && p.medicamentos.length > 0) ? p.medicamentos.map(m => `
+        <div class="clinical-record-card">
+          <div class="clinical-record-top">
+            <strong style="font-size:15px; color:var(--text-main);">${escapeHtml(m.nombre)}</strong>
+            <span class="badge-tag ${m.estado === 'Activo' ? 'badge-green' : 'badge-blue'}">${escapeHtml(m.estado)}</span>
           </div>
-        `).join('') : '<p style="color:var(--text-muted);">No hay medicamentos registrados.</p>'}
-      </div>
+          <div style="font-size:12.5px; color:var(--text-muted); line-height:1.5;">
+            <div>💊 <strong>Dosis:</strong> ${escapeHtml(m.dosis)} • ⏰ ${escapeHtml(m.frecuencia)}</div>
+            <div>⏳ <strong>Duración:</strong> ${escapeHtml(m.duracion)}</div>
+          </div>
+          <div style="display:flex; justify-content:flex-end; margin-top:4px;">
+            <button style="background:transparent; border:none; color:var(--danger); cursor:pointer;" onclick="deleteRecord('medicamento', ${m.ID})">🗑️ Eliminar</button>
+          </div>
+        </div>
+      `).join('') : '<p style="color:var(--text-muted); font-size:13px;">Sin tratamientos registrados.</p>'}
     </div>
   `;
 }
 
-// 6. Laboratorios
+// 6. Laboratorios View
 function renderLaboratorios() {
   const p = activePet;
   mainContent.innerHTML = `
-    <div class="card">
-      <div class="card-header">
-        <div class="card-header-title">
+    <div class="card-section">
+      <div class="card-section-header">
+        <div class="card-section-title">
           <span>🧪</span>
           <span>Exámenes de Laboratorio</span>
         </div>
-        <button class="btn btn-primary btn-sm" onclick="openAddRecordModal('laboratorio')">+ Registrar Examen</button>
+        <button class="btn-action-primary" onclick="openAddRecordModal('laboratorio')">+ Registrar</button>
       </div>
-      <div class="grid-2">
-        ${(p.laboratorios && p.laboratorios.length > 0) ? p.laboratorios.map(lab => `
-          <div class="record-card" style="cursor:pointer;" onclick="openLabDetailsModal('${lab.id}')">
-            <div class="record-top">
-              <strong class="record-title">${escapeHtml(lab.examen)}</strong>
-              <span class="record-date">${escapeHtml(lab.fecha)}</span>
-            </div>
-            <div class="record-desc">${escapeHtml(lab.laboratorio || 'Laboratorio Clínico')}</div>
-            <p style="font-size:0.8rem; color:var(--text-muted); margin-top:0.25rem;">
-              ${lab.resultados ? lab.resultados.length : 0} parámetros analizados • ${escapeHtml(lab.convenio || 'Particular')}
-            </p>
-            <div style="font-size:0.75rem; color:var(--primary); font-weight:700; margin-top:0.5rem;">
-              👉 Ver resultados y desglose completo
-            </div>
+
+      ${(p.laboratorios && p.laboratorios.length > 0) ? p.laboratorios.map(lab => `
+        <div class="clinical-record-card" style="cursor:pointer;" onclick="openLabDetailsModal('${lab.id}')">
+          <div class="clinical-record-top">
+            <strong style="font-size:15px; color:var(--text-main);">${escapeHtml(lab.examen)}</strong>
+            <span style="font-size:12px; color:var(--text-light); font-weight:700;">${escapeHtml(lab.fecha)}</span>
           </div>
-        `).join('') : '<p style="color:var(--text-muted);">No hay exámenes de laboratorio registrados.</p>'}
-      </div>
+          <p style="font-size:12.5px; color:var(--text-muted);">${escapeHtml(lab.laboratorio)}</p>
+          <div style="font-size:12px; color:var(--secondary); font-weight:800; margin-top:4px;">
+            👉 Ver desglose de ${lab.resultados ? lab.resultados.length : 0} parámetros analizados
+          </div>
+        </div>
+      `).join('') : '<p style="color:var(--text-muted); font-size:13px;">Sin exámenes de laboratorio.</p>'}
     </div>
   `;
 }
 
-// 7. Imagenes Medicas
+// 7. Imagenes Medicas View
 function renderImagenes() {
   const p = activePet;
   mainContent.innerHTML = `
-    <div class="card">
-      <div class="card-header">
-        <div class="card-header-title">
+    <div class="card-section">
+      <div class="card-section-header">
+        <div class="card-section-title">
           <span>🩻</span>
-          <span>Imágenes Médicas (Radiografías & Ecografías)</span>
+          <span>Imágenes Médicas</span>
         </div>
-        <button class="btn btn-primary btn-sm" onclick="openAddRecordModal('imagen')">+ Registrar Estudio</button>
+        <button class="btn-action-primary" onclick="openAddRecordModal('imagen')">+ Registrar</button>
       </div>
-      <div class="grid-2">
-        ${(p.imagenes && p.imagenes.length > 0) ? p.imagenes.map(img => `
-          <div class="record-card" style="cursor:pointer;" onclick="openImageDetailsModal(${img.ID})">
-            <div class="record-top">
-              <span class="badge badge-info">${escapeHtml(img.tipo)}</span>
-              <span class="record-date">${escapeHtml(img.fecha)}</span>
-            </div>
-            <strong class="record-title" style="margin-top:0.35rem;">${escapeHtml(img.nombre)}</strong>
-            <p class="record-desc">${escapeHtml(img.indicacion || 'Estudio de control')}</p>
-            <div style="margin-top:0.5rem; height:120px; border-radius:var(--radius-sm); overflow:hidden; background:#000;">
-              <img src="${img.imagen_url}" style="width:100%; height:100%; object-fit:cover;" onerror="this.src='/static/favicon.svg'">
-            </div>
-            <div style="font-size:0.75rem; color:var(--primary); font-weight:700; margin-top:0.5rem;">
-              👉 Ver informe radiológico completo
-            </div>
+
+      ${(p.imagenes && p.imagenes.length > 0) ? p.imagenes.map(img => `
+        <div class="clinical-record-card" style="cursor:pointer;" onclick="openImageDetailsModal(${img.ID})">
+          <div class="clinical-record-top">
+            <span class="badge-tag badge-blue">${escapeHtml(img.tipo)}</span>
+            <span style="font-size:12px; color:var(--text-light); font-weight:700;">${escapeHtml(img.fecha)}</span>
           </div>
-        `).join('') : '<p style="color:var(--text-muted);">No hay estudios de imagen registrados.</p>'}
-      </div>
+          <strong style="font-size:15px; color:var(--text-main); margin-top:4px;">${escapeHtml(img.nombre)}</strong>
+          <p style="font-size:12.5px; color:var(--text-muted);">${escapeHtml(img.indicacion || 'Estudio de control')}</p>
+          <div style="font-size:12px; color:var(--secondary); font-weight:800; margin-top:4px;">
+            👉 Ver radiografía e informe radiológico
+          </div>
+        </div>
+      `).join('') : '<p style="color:var(--text-muted); font-size:13px;">Sin imágenes registradas.</p>'}
     </div>
   `;
 }
 
-// 8. Diario de Salud
+// 8. Diario de Salud View
 function renderDiario() {
   const p = activePet;
   mainContent.innerHTML = `
-    <div class="card">
-      <div class="card-header">
-        <div class="card-header-title">
-          <span>📖</span>
+    <div class="card-section">
+      <div class="card-section-header">
+        <div class="card-section-title">
+          <span>📋</span>
           <span>Diario de Salud & Síntomas</span>
         </div>
-        <button class="btn btn-primary btn-sm" onclick="openAddRecordModal('sintoma')">+ Registrar Síntoma</button>
+        <button class="btn-action-primary" onclick="openAddRecordModal('sintoma')">+ Registrar</button>
       </div>
-      <div style="display:flex; flex-direction:column; gap:0.75rem;">
-        ${(p.diario && p.diario.length > 0) ? p.diario.map(d => `
-          <div class="record-card">
-            <div class="record-top">
-              <strong class="record-title">${escapeHtml(d.sintoma)}</strong>
-              <div style="display:flex; align-items:center; gap:0.5rem;">
-                <span class="badge ${d.estado === 'Normal' ? 'badge-success' : d.estado === 'Atención' ? 'badge-warning' : 'badge-danger'}">${escapeHtml(d.estado)}</span>
-                <span class="record-date">${escapeHtml(d.fecha)}</span>
-              </div>
-            </div>
-            <p class="record-desc">${escapeHtml(d.nota || 'Sin observaciones')}</p>
-            <div style="display:flex; justify-content:flex-end; gap:0.35rem; margin-top:0.35rem;">
-              <button class="btn btn-outline btn-sm" onclick="openEditRecordModal('sintoma', ${d.ID})">✏️ Editar</button>
-              <button class="btn btn-outline btn-sm" style="color:var(--danger);" onclick="deleteRecord('sintoma', ${d.ID})">🗑️</button>
-            </div>
+
+      ${(p.diario && p.diario.length > 0) ? p.diario.map(d => `
+        <div class="clinical-record-card">
+          <div class="clinical-record-top">
+            <strong style="font-size:15px; color:var(--text-main);">${escapeHtml(d.sintoma)}</strong>
+            <span class="badge-tag ${d.estado === 'Normal' ? 'badge-green' : d.estado === 'Atención' ? 'badge-amber' : 'badge-red'}">${escapeHtml(d.estado)}</span>
           </div>
-        `).join('') : '<p style="color:var(--text-muted);">No hay síntomas registrados en el diario.</p>'}
-      </div>
+          <p style="font-size:13px; color:var(--text-muted); margin-top:4px;">${escapeHtml(d.nota || 'Sin observaciones')}</p>
+          <div style="display:flex; justify-content:space-between; align-items:center; font-size:11.5px; color:var(--text-light); border-top:1px solid var(--border-light); padding-top:6px; margin-top:4px;">
+            <span>📅 ${escapeHtml(d.fecha)}</span>
+            <button style="background:transparent; border:none; color:var(--danger); cursor:pointer;" onclick="deleteRecord('sintoma', ${d.ID})">🗑️</button>
+          </div>
+        </div>
+      `).join('') : '<p style="color:var(--text-muted); font-size:13px;">Sin síntomas anotados en el diario.</p>'}
     </div>
   `;
 }
 
-// 9. Historial de Peso
+// 9. Historial de Peso View
 function renderPeso() {
   const p = activePet;
   mainContent.innerHTML = `
-    <div class="card">
-      <div class="card-header">
-        <div class="card-header-title">
+    <div class="card-section">
+      <div class="card-section-header">
+        <div class="card-section-title">
           <span>⚖️</span>
-          <span>Historial de Peso & Curva de Crecimiento</span>
+          <span>Control de Peso</span>
         </div>
-        <button class="btn btn-primary btn-sm" onclick="openAddRecordModal('peso')">+ Registrar Peso</button>
+        <button class="btn-action-primary" onclick="openAddRecordModal('peso')">+ Registrar</button>
       </div>
 
-      <div class="weight-chart-container" style="height:220px;">
-        ${renderSVGChart(p.peso_historial)}
-      </div>
-
-      <div class="table-wrap" style="margin-top:1.5rem;">
-        <table class="custom-table">
-          <thead>
-            <tr>
-              <th>Fecha de Pesaje</th>
-              <th>Peso (kg)</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${(p.peso_historial && p.peso_historial.length > 0) ? p.peso_historial.map(reg => `
-              <tr>
-                <td><strong>${escapeHtml(reg.fecha)}</strong></td>
-                <td><span style="font-family:var(--font-mono); font-weight:800; color:var(--primary); font-size:1.05rem;">${reg.peso} kg</span></td>
-                <td>
-                  <button class="btn-icon-action btn-icon-danger" onclick="deleteRecord('peso', ${reg.ID})" title="Eliminar">🗑️</button>
-                </td>
-              </tr>
-            `).join('') : '<tr><td colspan="3" style="text-align:center; color:var(--text-muted);">Sin registros de peso.</td></tr>'}
-          </tbody>
-        </table>
+      <div style="display:flex; flex-direction:column; gap:0.5rem;">
+        ${(p.peso_historial && p.peso_historial.length > 0) ? p.peso_historial.map(reg => `
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:0.65rem 0.85rem; background:var(--bg-surface); border-radius:var(--radius-sm);">
+            <div>
+              <strong style="font-size:14px;">${escapeHtml(reg.fecha)}</strong>
+            </div>
+            <div style="display:flex; align-items:center; gap:0.75rem;">
+              <span style="font-family:var(--font-mono); font-weight:900; color:var(--primary); font-size:15px;">${reg.peso} kg</span>
+              <button style="background:transparent; border:none; color:var(--danger); cursor:pointer;" onclick="deleteRecord('peso', ${reg.ID})">🗑️</button>
+            </div>
+          </div>
+        `).join('') : '<p style="color:var(--text-muted); font-size:13px;">Sin pesajes registrados.</p>'}
       </div>
     </div>
   `;
 }
 
-// 10. Alertas
+// 10. Alertas View
 function renderAlertas() {
   const p = activePet;
   mainContent.innerHTML = `
-    <div class="card">
-      <div class="card-header">
-        <div class="card-header-title">
+    <div class="card-section">
+      <div class="card-section-header">
+        <div class="card-section-title">
           <span>🔔</span>
-          <span>Gestión de Alertas de Salud</span>
+          <span>Alertas & Recordatorios</span>
         </div>
-        <button class="btn btn-primary btn-sm" onclick="openAddRecordModal('alerta')">+ Nueva Alerta</button>
+        <button class="btn-action-primary" onclick="openAddRecordModal('alerta')">+ Nueva</button>
       </div>
-      <div>
-        ${(p.alertas && p.alertas.length > 0) ? p.alertas.map(a => `
-          <div class="alert-card ${a.tipo}" onclick="openAlertActionModal('${a.id}')">
-            <div class="alert-icon">${a.tipo === 'critica' ? '⚠️' : '🔔'}</div>
-            <div class="alert-body" style="flex:1;">
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                <h4>${escapeHtml(a.titulo)}</h4>
-                <span class="badge ${a.estado === 'solucionada' ? 'badge-success' : a.estado === 'pospuesta' ? 'badge-warning' : 'badge-danger'}">
-                  ${escapeHtml(a.estado || 'Activa')}
-                </span>
-              </div>
-              <p>${escapeHtml(a.descripcion)}</p>
-              <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.35rem;">👉 Clic para cambiar estado (Solucionar / Posponer / Olvidar)</div>
-            </div>
+
+      ${(p.alertas && p.alertas.length > 0) ? p.alertas.map(a => `
+        <div class="alert-box ${a.tipo}" onclick="openAlertActionModal('${a.id}')">
+          <div class="alert-icon-wrap">
+            <span>${a.tipo === 'critica' ? '⚠️' : '🔔'}</span>
           </div>
-        `).join('') : '<p style="color:var(--text-muted);">No hay alertas registradas.</p>'}
-      </div>
+          <div class="alert-content">
+            <div class="alert-title">${escapeHtml(a.titulo)}</div>
+            <div class="alert-desc">${escapeHtml(a.descripcion)}</div>
+          </div>
+          <span class="alert-tag">${escapeHtml(a.estado || 'Activa')}</span>
+        </div>
+      `).join('') : '<p style="color:var(--text-muted); font-size:13px;">Sin alertas activas.</p>'}
     </div>
   `;
 }
 
-// 11. Perfil & Propietario
+// 11. Perfil View
 function renderPerfil() {
   const p = activePet;
   const owner = p.propietario || {};
   mainContent.innerHTML = `
-    <div class="grid-2">
-      <!-- Pet Profile -->
-      <div class="card">
-        <div class="card-header">
-          <div class="card-header-title">
-            <span>🐾</span>
-            <span>Identificación de la Mascota</span>
+    <div class="card-section">
+      <div class="card-section-header">
+        <div class="card-section-title">
+          <span>🐾</span>
+          <span>Ficha de Identificación</span>
+        </div>
+      </div>
+      <form onsubmit="handleSavePetProfile(event)">
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Nombre</label>
+            <input type="text" class="form-input" id="pNombre" value="${escapeHtml(p.nombre)}" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Especie</label>
+            <input type="text" class="form-input" id="pEspecie" value="${escapeHtml(p.especie)}" required>
           </div>
         </div>
-        <form id="petProfileForm" onsubmit="handleUpdatePetProfile(event)">
-          <div class="form-grid-2">
-            <div class="form-group">
-              <label class="form-label">Nombre</label>
-              <input type="text" class="form-input" id="pNombre" value="${escapeHtml(p.nombre)}" required>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Especie</label>
-              <input type="text" class="form-input" id="pEspecie" value="${escapeHtml(p.especie)}" required>
-            </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Raza</label>
+            <input type="text" class="form-input" id="pRaza" value="${escapeHtml(p.raza || '')}">
           </div>
-          <div class="form-grid-2">
-            <div class="form-group">
-              <label class="form-label">Raza</label>
-              <input type="text" class="form-input" id="pRaza" value="${escapeHtml(p.raza || '')}">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Edad</label>
-              <input type="text" class="form-input" id="pEdad" value="${escapeHtml(p.edad || '')}">
-            </div>
+          <div class="form-group">
+            <label class="form-label">Edad</label>
+            <input type="text" class="form-input" id="pEdad" value="${escapeHtml(p.edad || '')}">
           </div>
-          <div class="form-grid-2">
-            <div class="form-group">
-              <label class="form-label">Sexo</label>
-              <input type="text" class="form-input" id="pSexo" value="${escapeHtml(p.sexo || '')}">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Fecha Nacimiento</label>
-              <input type="text" class="form-input" id="pFechaNac" value="${escapeHtml(p.fecha_nacimiento || '')}">
-            </div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Sexo</label>
+            <input type="text" class="form-input" id="pSexo" value="${escapeHtml(p.sexo || '')}">
           </div>
           <div class="form-group">
             <label class="form-label">Microchip</label>
             <input type="text" class="form-input" id="pMicrochip" value="${escapeHtml(p.microchip || '')}">
           </div>
-          <div class="form-group">
-            <label class="form-label">Seguro Veterinario</label>
-            <input type="text" class="form-input" id="pSeguro" value="${escapeHtml(p.seguro || '')}">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Clínica Frecuente</label>
-            <input type="text" class="form-input" id="pClinica" value="${escapeHtml(p.clinica_frecuente || '')}">
-          </div>
-          <div class="form-group">
-            <label class="form-label">URL Foto</label>
-            <input type="text" class="form-input" id="pFoto" value="${escapeHtml(p.foto || '')}">
-          </div>
-          <button type="submit" class="btn btn-primary" style="width:100%;">Guardar Datos Mascota</button>
-        </form>
-      </div>
-
-      <!-- Owner Profile -->
-      <div class="card">
-        <div class="card-header">
-          <div class="card-header-title">
-            <span>👤</span>
-            <span>Datos del Propietario / Tutor</span>
-          </div>
         </div>
-        <form id="ownerProfileForm" onsubmit="handleUpdateOwner(event)">
+        <div class="form-group">
+          <label class="form-label">Seguro Médico</label>
+          <input type="text" class="form-input" id="pSeguro" value="${escapeHtml(p.seguro || '')}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Clínica Frecuente</label>
+          <input type="text" class="form-input" id="pClinica" value="${escapeHtml(p.clinica_frecuente || '')}">
+        </div>
+        <button type="submit" class="btn-action-primary" style="width:100%; padding:0.75rem;">Guardar Cambios Mascota</button>
+      </form>
+    </div>
+
+    <div class="card-section">
+      <div class="card-section-header">
+        <div class="card-section-title">
+          <span>👤</span>
+          <span>Datos del Tutor / Dueño</span>
+        </div>
+      </div>
+      <form onsubmit="handleSaveOwnerProfile(event)">
+        <div class="form-group">
+          <label class="form-label">Nombre del Tutor</label>
+          <input type="text" class="form-input" id="oNombre" value="${escapeHtml(owner.nombre || '')}" required>
+        </div>
+        <div class="form-grid-2">
           <div class="form-group">
-            <label class="form-label">Nombre Completo</label>
-            <input type="text" class="form-input" id="oNombre" value="${escapeHtml(owner.nombre || '')}" required>
-          </div>
-          <div class="form-grid-2">
-            <div class="form-group">
-              <label class="form-label">RUT / DNI</label>
-              <input type="text" class="form-input" id="oRut" value="${escapeHtml(owner.rut || '')}">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Teléfono de Contacto</label>
-              <input type="text" class="form-input" id="oTelefono" value="${escapeHtml(owner.telefono || '')}">
-            </div>
+            <label class="form-label">Teléfono</label>
+            <input type="text" class="form-input" id="oTelefono" value="${escapeHtml(owner.telefono || '')}">
           </div>
           <div class="form-group">
-            <label class="form-label">Correo Electrónico</label>
+            <label class="form-label">Email</label>
             <input type="email" class="form-input" id="oEmail" value="${escapeHtml(owner.email || '')}">
           </div>
-          <div class="form-group">
-            <label class="form-label">Dirección / Residencia</label>
-            <input type="text" class="form-input" id="oDireccion" value="${escapeHtml(owner.direccion || '')}">
-          </div>
-          <button type="submit" class="btn btn-primary" style="width:100%;">Guardar Datos Propietario</button>
-        </form>
-      </div>
+        </div>
+        <button type="submit" class="btn-action-primary" style="width:100%; padding:0.75rem;">Guardar Datos Dueño</button>
+      </form>
     </div>
   `;
 }
 
-// Lightweight SVG Chart Renderer
-function renderSVGChart(history) {
-  if (!history || history.length === 0) {
-    return '<div style="color:var(--text-muted); font-size:0.85rem;">Sin datos suficientes para graficar.</div>';
-  }
+// ----------------------------------------------------
+// Modals & Bottom Sheets (Matching 2.png)
+// ----------------------------------------------------
 
-  const weights = history.map(h => h.peso);
-  const minW = Math.min(...weights) * 0.9;
-  const maxW = Math.max(...weights) * 1.1;
-  const range = maxW - minW || 1;
-
-  const width = 600;
-  const height = 150;
-  const padX = 40;
-  const padY = 20;
-
-  const points = history.map((item, idx) => {
-    const x = padX + (idx / (history.length - 1 || 1)) * (width - padX * 2);
-    const y = height - padY - ((item.peso - minW) / range) * (height - padY * 2);
-    return { x, y, peso: item.peso, fecha: item.fecha };
-  });
-
-  const pathD = points.map((pt, i) => `${i === 0 ? 'M' : 'L'} ${pt.x.toFixed(1)} ${pt.y.toFixed(1)}`).join(' ');
-  const areaD = `${pathD} L ${points[points.length-1].x.toFixed(1)} ${height} L ${points[0].x.toFixed(1)} ${height} Z`;
-
-  return `
-    <svg viewBox="0 0 ${width} ${height}" class="svg-chart">
-      <defs>
-        <linearGradient id="gradWeight" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#00AEEF" stop-opacity="0.3"/>
-          <stop offset="100%" stop-color="#1A5AD7" stop-opacity="0.0"/>
-        </linearGradient>
-      </defs>
-      <!-- Grid line -->
-      <line x1="${padX}" y1="${height-padY}" x2="${width-padX}" y2="${height-padY}" stroke="var(--border-color)" stroke-width="1" />
-      <!-- Area fill -->
-      <path d="${areaD}" fill="url(#gradWeight)" />
-      <!-- Line path -->
-      <path d="${pathD}" fill="none" stroke="#1A5AD7" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
-      <!-- Dots & Labels -->
-      ${points.map(pt => `
-        <circle cx="${pt.x.toFixed(1)}" cy="${pt.y.toFixed(1)}" r="5" fill="#00AEEF" stroke="#ffffff" stroke-width="2" />
-        <text x="${pt.x.toFixed(1)}" y="${(pt.y - 10).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="bold" fill="var(--text-main)">${pt.peso}kg</text>
-        <text x="${pt.x.toFixed(1)}" y="${height - 4}" text-anchor="middle" font-size="10" fill="var(--text-muted)">${pt.fecha}</text>
-      `).join('')}
-    </svg>
-  `;
-}
-
-// Modals Handling
 function closeModal() {
   modalBackdrop.style.display = 'none';
-  modalContent.innerHTML = '';
+  modalCard.innerHTML = '';
 }
 
 modalBackdrop.addEventListener('click', (e) => {
   if (e.target === modalBackdrop) closeModal();
 });
 
-// Quick Add Menu Modal
-function openQuickAddMenu() {
-  modalContent.innerHTML = `
-    <button class="modal-close-btn" onclick="closeModal()">&times;</button>
-    <h3 class="modal-title">Registrar Información Clínica</h3>
-    <p class="modal-subtitle">Selecciona el tipo de evento o registro médico para ${escapeHtml(activePet.nombre)}:</p>
-    <div class="add-options-grid">
-      <button class="add-option-btn" onclick="openAddRecordModal('diagnostico')">
-        <span class="add-option-icon">🩺</span>
-        <span>Consulta / Diagnóstico</span>
+// Bottom Sheet Option Menu (Exact 2.png)
+function openBottomSheetMenu() {
+  modalCard.innerHTML = `
+    <div class="sheet-drag-handle"></div>
+    <button class="sheet-close-btn" onclick="closeModal()">✕</button>
+    <h3 class="sheet-title">¿Qué deseas registrar?</h3>
+
+    <div class="sheet-options-list">
+      <!-- 1. Sintoma -->
+      <button class="sheet-option-row" onclick="openAddRecordModal('sintoma')">
+        <div class="sheet-option-icon" style="background:#eff6ff; color:#2563eb;">📋</div>
+        <div class="sheet-option-text">
+          <span class="sheet-option-title">Registrar Síntoma</span>
+          <span class="sheet-option-sub">Anotar observaciones cotidianas</span>
+        </div>
       </button>
-      <button class="add-option-btn" onclick="openAddRecordModal('vacuna')">
-        <span class="add-option-icon">💉</span>
-        <span>Vacuna</span>
+
+      <!-- 2. Peso -->
+      <button class="sheet-option-row" onclick="openAddRecordModal('peso')">
+        <div class="sheet-option-icon" style="background:#fff7ed; color:#ea580c;">⚖️</div>
+        <div class="sheet-option-text">
+          <span class="sheet-option-title">Registrar Peso</span>
+          <span class="sheet-option-sub">Controlar peso y crecimiento</span>
+        </div>
       </button>
-      <button class="add-option-btn" onclick="openAddRecordModal('desparasitacion')">
-        <span class="add-option-icon">🪱</span>
-        <span>Desparasitación</span>
+
+      <!-- 3. Vacuna -->
+      <button class="sheet-option-row" onclick="openAddRecordModal('vacuna')">
+        <div class="sheet-option-icon" style="background:#ecfdf5; color:#10b981;">💉</div>
+        <div class="sheet-option-text">
+          <span class="sheet-option-title">Registrar Vacuna</span>
+          <span class="sheet-option-sub">Historial de inmunizaciones</span>
+        </div>
       </button>
-      <button class="add-option-btn" onclick="openAddRecordModal('medicamento')">
-        <span class="add-option-icon">💊</span>
-        <span>Medicamento</span>
+
+      <!-- 4. Recordatorio -->
+      <button class="sheet-option-row" onclick="openAddRecordModal('alerta')">
+        <div class="sheet-option-icon" style="background:#eef2ff; color:#6366f1;">🔔</div>
+        <div class="sheet-option-text">
+          <span class="sheet-option-title">Agendar Recordatorio</span>
+          <span class="sheet-option-sub">Alertas y citas próximas</span>
+        </div>
       </button>
-      <button class="add-option-btn" onclick="openAddRecordModal('laboratorio')">
-        <span class="add-option-icon">🧪</span>
-        <span>Laboratorio</span>
+
+      <!-- 5. Tratamiento -->
+      <button class="sheet-option-row" onclick="openAddRecordModal('medicamento')">
+        <div class="sheet-option-icon" style="background:#faf5ff; color:#9333ea;">💊</div>
+        <div class="sheet-option-text">
+          <span class="sheet-option-title">Registrar Tratamiento</span>
+          <span class="sheet-option-sub">Prescripción o suplemento</span>
+        </div>
       </button>
-      <button class="add-option-btn" onclick="openAddRecordModal('imagen')">
-        <span class="add-option-icon">🩻</span>
-        <span>Imagen Médica</span>
+
+      <!-- 6. Consulta -->
+      <button class="sheet-option-row" onclick="openAddRecordModal('diagnostico')">
+        <div class="sheet-option-icon" style="background:#f0fdfa; color:#0d9488;">🩺</div>
+        <div class="sheet-option-text">
+          <span class="sheet-option-title">Registrar Consulta</span>
+          <span class="sheet-option-sub">Historial y diagnóstico clínico</span>
+        </div>
       </button>
-      <button class="add-option-btn" onclick="openAddRecordModal('sintoma')">
-        <span class="add-option-icon">📖</span>
-        <span>Síntoma / Diario</span>
+
+      <!-- 7. Desparasitacion -->
+      <button class="sheet-option-row" onclick="openAddRecordModal('desparasitacion')">
+        <div class="sheet-option-icon" style="background:#fffbeb; color:#d97706;">🪱</div>
+        <div class="sheet-option-text">
+          <span class="sheet-option-title">Registrar Desparasitación</span>
+          <span class="sheet-option-sub">Control interno o externo</span>
+        </div>
       </button>
-      <button class="add-option-btn" onclick="openAddRecordModal('peso')">
-        <span class="add-option-icon">⚖️</span>
-        <span>Control de Peso</span>
+
+      <!-- 8. Laboratorio -->
+      <button class="sheet-option-row" onclick="openAddRecordModal('laboratorio')">
+        <div class="sheet-option-icon" style="background:#fdf2f8; color:#db2777;">🧪</div>
+        <div class="sheet-option-text">
+          <span class="sheet-option-title">Registrar Laboratorio</span>
+          <span class="sheet-option-sub">Exámenes y análisis clínicos</span>
+        </div>
       </button>
-      <button class="add-option-btn" onclick="openAddRecordModal('alerta')">
-        <span class="add-option-icon">🔔</span>
-        <span>Alerta o Recordatorio</span>
+
+      <!-- 9. Imagen -->
+      <button class="sheet-option-row" onclick="openAddRecordModal('imagen')">
+        <div class="sheet-option-icon" style="background:#ecfeff; color:#0891b2;">🩻</div>
+        <div class="sheet-option-text">
+          <span class="sheet-option-title">Registrar Imagen</span>
+          <span class="sheet-option-sub">Ecografías y radiografías</span>
+        </div>
       </button>
     </div>
   `;
   modalBackdrop.style.display = 'flex';
 }
 
-quickAddBtn.addEventListener('click', openQuickAddMenu);
-mobileFab.addEventListener('click', openQuickAddMenu);
+// Add Record Modal with Immediate Specific Form
+function openAddRecordModal(type) {
+  const now = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  let fields = '';
+  let title = 'Nuevo Registro';
 
-// Add Pet Modal
-addPetBtn.addEventListener('click', () => {
-  modalContent.innerHTML = `
-    <button class="modal-close-btn" onclick="closeModal()">&times;</button>
-    <h3 class="modal-title">Registrar Nueva Mascota</h3>
-    <p class="modal-subtitle">Crea una ficha médica clínica independiente:</p>
-    <form onsubmit="handleCreatePet(event)">
-      <div class="form-grid-2">
-        <div class="form-group">
-          <label class="form-label">Nombre</label>
-          <input type="text" class="form-input" id="newPetNombre" placeholder="Ej: Rocky" required>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Especie</label>
-          <select class="form-select" id="newPetEspecie">
-            <option value="Perro">Perro</option>
-            <option value="Gato">Gato</option>
-            <option value="Conejo">Conejo</option>
-            <option value="Ave">Ave</option>
-            <option value="Otro">Otro</option>
-          </select>
-        </div>
+  if (type === 'vacuna') {
+    title = 'Registrar Vacuna';
+    fields = `
+      <div class="form-group">
+        <label class="form-label">Nombre de la Vacuna</label>
+        <input type="text" class="form-input" id="fNombre" placeholder="Ej: Antirrábica, Séxtuple..." required>
       </div>
       <div class="form-grid-2">
         <div class="form-group">
-          <label class="form-label">Raza</label>
-          <input type="text" class="form-input" id="newPetRaza" placeholder="Ej: Golden Retriever">
+          <label class="form-label">Fecha Aplicación</label>
+          <input type="text" class="form-input" id="fFecha" value="${now}" required>
         </div>
         <div class="form-group">
-          <label class="form-label">Edad</label>
-          <input type="text" class="form-input" id="newPetEdad" placeholder="Ej: 2 años">
-        </div>
-      </div>
-      <div class="form-grid-2">
-        <div class="form-group">
-          <label class="form-label">Sexo</label>
-          <input type="text" class="form-input" id="newPetSexo" placeholder="Ej: Macho (Castrado)">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Peso Inicial</label>
-          <input type="text" class="form-input" id="newPetPeso" placeholder="Ej: 8.5 kg">
+          <label class="form-label">Próxima Renovación</label>
+          <input type="text" class="form-input" id="fProxFecha" placeholder="DD/MM/AAAA">
         </div>
       </div>
       <div class="form-group">
-        <label class="form-label">Nombre del Tutor/Dueño</label>
-        <input type="text" class="form-input" id="newPetOwner" placeholder="Ej: María González">
+        <label class="form-label">Lote del Fabricante</label>
+        <input type="text" class="form-input" id="fLote" placeholder="Lote...">
       </div>
-      <button type="submit" class="btn btn-primary" style="width:100%; margin-top:0.5rem;">+ Crear Ficha Médica</button>
-    </form>
-  `;
-  modalBackdrop.style.display = 'flex';
-});
-
-async function handleCreatePet(e) {
-  e.preventDefault();
-  const payload = {
-    nombre: document.getElementById('newPetNombre').value.trim(),
-    especie: document.getElementById('newPetEspecie').value,
-    raza: document.getElementById('newPetRaza').value.trim(),
-    edad: document.getElementById('newPetEdad').value.trim(),
-    sexo: document.getElementById('newPetSexo').value.trim(),
-    peso_actual: document.getElementById('newPetPeso').value.trim(),
-    propietario: {
-      nombre: document.getElementById('newPetOwner').value.trim()
-    }
-  };
-
-  try {
-    const res = await fetch('/api/pets', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    if (res.ok) {
-      const created = await res.json();
-      closeModal();
-      await loadPets();
-      await loadActivePet(created.id);
-    }
-  } catch (err) {
-    alert('Error al registrar mascota: ' + err.message);
-  }
-}
-
-// Add Record Modal
-function openAddRecordModal(type) {
-  let fieldsHTML = '';
-  const now = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-
-  if (type === 'diagnostico') {
-    fieldsHTML = `
+    `;
+  } else if (type === 'diagnostico') {
+    title = 'Registrar Consulta Médica';
+    fields = `
       <div class="form-grid-2">
         <div class="form-group">
           <label class="form-label">Fecha</label>
           <input type="text" class="form-input" id="fFecha" value="${now}" required>
         </div>
         <div class="form-group">
-          <label class="form-label">Tipo de Consulta</label>
+          <label class="form-label">Tipo</label>
           <select class="form-select" id="fTipo">
             <option value="Consulta General">Consulta General</option>
             <option value="Urgencia">Urgencia</option>
             <option value="Especialidad">Especialidad</option>
-            <option value="Control Sano">Control Sano</option>
           </select>
         </div>
       </div>
       <div class="form-group">
-        <label class="form-label">Descripción / Diagnóstico</label>
-        <textarea class="form-textarea" id="fDesc" placeholder="Detalle clínico de la consulta..." required></textarea>
+        <label class="form-label">Diagnóstico / Motivo</label>
+        <textarea class="form-textarea" id="fDesc" placeholder="Observaciones y diagnóstico clínico..." required></textarea>
       </div>
-      <div class="form-grid-2">
-        <div class="form-group">
-          <label class="form-label">Veterinario Tratante</label>
-          <input type="text" class="form-input" id="fDoctor" placeholder="Dra. Sandra Valenzuela">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Clínica</label>
-          <input type="text" class="form-input" id="fClinica" placeholder="Hospital Veterinario Sania Pet">
-        </div>
-      </div>
-    `;
-  } else if (type === 'vacuna') {
-    fieldsHTML = `
       <div class="form-group">
-        <label class="form-label">Nombre de la Vacuna</label>
-        <input type="text" class="form-input" id="fNombre" placeholder="Ej: Antirrábica, Séxtuple Canina..." required>
-      </div>
-      <div class="form-grid-2">
-        <div class="form-group">
-          <label class="form-label">Fecha de Aplicación</label>
-          <input type="text" class="form-input" id="fFecha" value="${now}" required>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Próxima Dosis / Renovación</label>
-          <input type="text" class="form-input" id="fProxFecha" placeholder="DD/MM/AAAA">
-        </div>
-      </div>
-      <div class="form-grid-2">
-        <div class="form-group">
-          <label class="form-label">Lote</label>
-          <input type="text" class="form-input" id="fLote" placeholder="Lote del frasco">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Veterinario</label>
-          <input type="text" class="form-input" id="fVet" placeholder="Nombre profesional">
-        </div>
+        <label class="form-label">Veterinario</label>
+        <input type="text" class="form-input" id="fDoctor" placeholder="Dra. Sandra Valenzuela">
       </div>
     `;
   } else if (type === 'desparasitacion') {
-    fieldsHTML = `
+    title = 'Registrar Desparasitación';
+    fields = `
       <div class="form-grid-2">
         <div class="form-group">
           <label class="form-label">Tipo</label>
           <select class="form-select" id="fTipo">
-            <option value="Externa">Externa (Pulgas/Garrapatas)</option>
-            <option value="Interna">Interna (Lombrices/Gastrointestinal)</option>
+            <option value="Externa">Externa</option>
+            <option value="Interna">Interna</option>
           </select>
         </div>
         <div class="form-group">
-          <label class="form-label">Producto / Fármaco</label>
-          <input type="text" class="form-input" id="fProducto" placeholder="Ej: NexGard, Bravecto, Drontal..." required>
+          <label class="form-label">Producto</label>
+          <input type="text" class="form-input" id="fProducto" placeholder="NexGard, Bravecto..." required>
         </div>
       </div>
       <div class="form-grid-2">
@@ -986,56 +819,35 @@ function openAddRecordModal(type) {
           <input type="text" class="form-input" id="fProxFecha" placeholder="DD/MM/AAAA">
         </div>
       </div>
-      <div class="form-grid-2">
-        <div class="form-group">
-          <label class="form-label">Dosis</label>
-          <input type="text" class="form-input" id="fDosis" placeholder="1 tableta, pipeta...">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Peso Mascota</label>
-          <input type="text" class="form-input" id="fPeso" value="${activePet.peso_actual || ''}">
-        </div>
-      </div>
     `;
   } else if (type === 'medicamento') {
-    fieldsHTML = `
+    title = 'Registrar Tratamiento';
+    fields = `
       <div class="form-group">
-        <label class="form-label">Nombre del Medicamento</label>
-        <input type="text" class="form-input" id="fNombre" placeholder="Ej: Prednisona 5mg, Amoxicilina..." required>
+        <label class="form-label">Fármaco / Medicamento</label>
+        <input type="text" class="form-input" id="fNombre" placeholder="Ej: Prednisona 5mg" required>
       </div>
       <div class="form-grid-2">
         <div class="form-group">
           <label class="form-label">Dosis</label>
-          <input type="text" class="form-input" id="fDosis" placeholder="Ej: 1 comprimido, 5ml..." required>
+          <input type="text" class="form-input" id="fDosis" placeholder="1 tableta" required>
         </div>
         <div class="form-group">
           <label class="form-label">Frecuencia</label>
-          <input type="text" class="form-input" id="fFrec" placeholder="Ej: Cada 12 horas" required>
-        </div>
-      </div>
-      <div class="form-grid-2">
-        <div class="form-group">
-          <label class="form-label">Duración</label>
-          <input type="text" class="form-input" id="fDuracion" placeholder="Ej: 7 días, Permanente">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Estado</label>
-          <select class="form-select" id="fEstado">
-            <option value="Activo">Activo</option>
-            <option value="Completado">Completado</option>
-          </select>
+          <input type="text" class="form-input" id="fFrec" placeholder="Cada 24 horas" required>
         </div>
       </div>
     `;
   } else if (type === 'sintoma') {
-    fieldsHTML = `
+    title = 'Registrar Síntoma';
+    fields = `
       <div class="form-grid-2">
         <div class="form-group">
           <label class="form-label">Fecha</label>
           <input type="text" class="form-input" id="fFecha" value="${now}" required>
         </div>
         <div class="form-group">
-          <label class="form-label">Estado / Gravedad</label>
+          <label class="form-label">Gravedad</label>
           <select class="form-select" id="fEstado">
             <option value="Normal">Normal</option>
             <option value="Atención">Atención</option>
@@ -1045,15 +857,16 @@ function openAddRecordModal(type) {
       </div>
       <div class="form-group">
         <label class="form-label">Síntoma o Conducta</label>
-        <input type="text" class="form-input" id="fSintoma" placeholder="Ej: Apetito disminuido, tos, vómito..." required>
+        <input type="text" class="form-input" id="fSintoma" placeholder="Apetito, vómito, tos..." required>
       </div>
       <div class="form-group">
-        <label class="form-label">Observaciones / Notas</label>
-        <textarea class="form-textarea" id="fNota" placeholder="Detalles de lo observado..."></textarea>
+        <label class="form-label">Observaciones</label>
+        <textarea class="form-textarea" id="fNota" placeholder="Detalle..."></textarea>
       </div>
     `;
   } else if (type === 'peso') {
-    fieldsHTML = `
+    title = 'Registrar Control de Peso';
+    fields = `
       <div class="form-grid-2">
         <div class="form-group">
           <label class="form-label">Fecha</label>
@@ -1061,39 +874,35 @@ function openAddRecordModal(type) {
         </div>
         <div class="form-group">
           <label class="form-label">Peso (kg)</label>
-          <input type="number" step="0.1" class="form-input" id="fPesoNum" placeholder="Ej: 12.5" required>
+          <input type="number" step="0.1" class="form-input" id="fPesoNum" placeholder="12.4" required>
         </div>
       </div>
     `;
   } else if (type === 'alerta') {
-    fieldsHTML = `
-      <div class="form-grid-2">
-        <div class="form-group">
-          <label class="form-label">Tipo de Alerta</label>
-          <select class="form-select" id="fTipo">
-            <option value="critica">Alerta Crítica / Alergia Severa</option>
-            <option value="preventiva">Recordatorio Preventivo</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Fecha</label>
-          <input type="text" class="form-input" id="fFecha" value="${now}">
-        </div>
+    title = 'Agendar Alerta / Recordatorio';
+    fields = `
+      <div class="form-group">
+        <label class="form-label">Tipo de Alerta</label>
+        <select class="form-select" id="fTipo">
+          <option value="critica">Alerta Crítica / Alergia Severa</option>
+          <option value="preventiva">Recordatorio Preventivo</option>
+        </select>
       </div>
       <div class="form-group">
         <label class="form-label">Título de la Alerta</label>
-        <input type="text" class="form-input" id="fTitulo" placeholder="Ej: ALERGIA A LA IVERMECTINA" required>
+        <input type="text" class="form-input" id="fTitulo" placeholder="ALERGIA A LA IVERMECTINA" required>
       </div>
       <div class="form-group">
         <label class="form-label">Descripción</label>
-        <textarea class="form-textarea" id="fDesc" placeholder="Instrucciones o advertencias..." required></textarea>
+        <textarea class="form-textarea" id="fDesc" placeholder="Detalle e instrucciones..." required></textarea>
       </div>
     `;
   } else if (type === 'laboratorio') {
-    fieldsHTML = `
+    title = 'Registrar Examen de Laboratorio';
+    fields = `
       <div class="form-group">
         <label class="form-label">Nombre del Examen</label>
-        <input type="text" class="form-input" id="fExamen" placeholder="Ej: Hemograma Completo, Perfil Renal..." required>
+        <input type="text" class="form-input" id="fExamen" placeholder="Hemograma Completo" required>
       </div>
       <div class="form-grid-2">
         <div class="form-group">
@@ -1102,23 +911,19 @@ function openAddRecordModal(type) {
         </div>
         <div class="form-group">
           <label class="form-label">Laboratorio</label>
-          <input type="text" class="form-input" id="fLab" placeholder="Veterinary Diagnostics Lab">
+          <input type="text" class="form-input" id="fLab" placeholder="Veterinary Diagnostics">
         </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Notas Generales / Interpretación</label>
-        <textarea class="form-textarea" id="fNotas" placeholder="Resumen de resultados del patólogo..."></textarea>
       </div>
     `;
   } else if (type === 'imagen') {
-    fieldsHTML = `
+    title = 'Registrar Imagen Médica';
+    fields = `
       <div class="form-grid-2">
         <div class="form-group">
-          <label class="form-label">Tipo de Estudio</label>
+          <label class="form-label">Tipo</label>
           <select class="form-select" id="fTipo">
             <option value="Radiografía">Radiografía</option>
             <option value="Ecografía">Ecografía</option>
-            <option value="Tomografía">Tomografía</option>
           </select>
         </div>
         <div class="form-group">
@@ -1127,8 +932,8 @@ function openAddRecordModal(type) {
         </div>
       </div>
       <div class="form-group">
-        <label class="form-label">Nombre del Estudio</label>
-        <input type="text" class="form-input" id="fNombre" placeholder="Ej: Radiografía de Abdomen Lateral" required>
+        <label class="form-label">Estudio</label>
+        <input type="text" class="form-input" id="fNombre" placeholder="Radiografía de Abdomen" required>
       </div>
       <div class="form-group">
         <label class="form-label">Informe Radiológico</label>
@@ -1137,12 +942,13 @@ function openAddRecordModal(type) {
     `;
   }
 
-  modalContent.innerHTML = `
-    <button class="modal-close-btn" onclick="closeModal()">&times;</button>
-    <h3 class="modal-title">Agregar Registro: ${type.toUpperCase()}</h3>
+  modalCard.innerHTML = `
+    <div class="sheet-drag-handle"></div>
+    <button class="sheet-close-btn" onclick="closeModal()">✕</button>
+    <h3 class="sheet-title">${title}</h3>
     <form onsubmit="handleSaveRecord(event, '${type}')">
-      ${fieldsHTML}
-      <button type="submit" class="btn btn-primary" style="width:100%; margin-top:0.5rem;">+ Guardar Registro</button>
+      ${fields}
+      <button type="submit" class="btn-action-primary" style="width:100%; padding:0.8rem; margin-top:0.5rem;">+ Guardar Registro</button>
     </form>
   `;
   modalBackdrop.style.display = 'flex';
@@ -1153,82 +959,75 @@ async function handleSaveRecord(e, type) {
   let url = `/api/pets/${activePetId}/`;
   let payload = {};
 
-  if (type === 'diagnostico') {
-    url += 'diagnosticos';
-    payload = {
-      fecha: document.getElementById('fFecha').value,
-      tipo: document.getElementById('fTipo').value,
-      descripcion: document.getElementById('fDesc').value,
-      doctor: document.getElementById('fDoctor').value,
-      clinica: document.getElementById('fClinica').value,
-      estado: 'Resuelto'
-    };
-  } else if (type === 'vacuna') {
+  if (type === 'vacuna') {
     url += 'vacunas';
     payload = {
-      nombre: document.getElementById('fNombre').value,
-      fecha: document.getElementById('fFecha').value,
-      proxima_fecha: document.getElementById('fProxFecha').value,
-      lote: document.getElementById('fLote').value,
-      veterinario: document.getElementById('fVet').value,
+      nombre: document.getElementById('fNombre').value.trim(),
+      fecha: document.getElementById('fFecha').value.trim(),
+      proxima_fecha: document.getElementById('fProxFecha').value.trim(),
+      lote: document.getElementById('fLote').value.trim(),
       estado: 'Aplicada'
+    };
+  } else if (type === 'diagnostico') {
+    url += 'diagnosticos';
+    payload = {
+      fecha: document.getElementById('fFecha').value.trim(),
+      tipo: document.getElementById('fTipo').value,
+      descripcion: document.getElementById('fDesc').value.trim(),
+      doctor: document.getElementById('fDoctor').value.trim(),
+      estado: 'Resuelto'
     };
   } else if (type === 'desparasitacion') {
     url += 'desparasitaciones';
     payload = {
       tipo: document.getElementById('fTipo').value,
-      producto: document.getElementById('fProducto').value,
-      fecha: document.getElementById('fFecha').value,
-      proxima_fecha: document.getElementById('fProxFecha').value,
-      dosis: document.getElementById('fDosis').value,
-      peso_mascota: document.getElementById('fPeso').value
+      producto: document.getElementById('fProducto').value.trim(),
+      fecha: document.getElementById('fFecha').value.trim(),
+      proxima_fecha: document.getElementById('fProxFecha').value.trim()
     };
   } else if (type === 'medicamento') {
     url += 'medicamentos';
     payload = {
-      nombre: document.getElementById('fNombre').value,
-      dosis: document.getElementById('fDosis').value,
-      frecuencia: document.getElementById('fFrec').value,
-      duracion: document.getElementById('fDuracion').value,
-      estado: document.getElementById('fEstado').value
+      nombre: document.getElementById('fNombre').value.trim(),
+      dosis: document.getElementById('fDosis').value.trim(),
+      frecuencia: document.getElementById('fFrec').value.trim(),
+      estado: 'Activo'
     };
   } else if (type === 'sintoma') {
     url += 'sintomas';
     payload = {
-      fecha: document.getElementById('fFecha').value,
-      sintoma: document.getElementById('fSintoma').value,
+      fecha: document.getElementById('fFecha').value.trim(),
+      sintoma: document.getElementById('fSintoma').value.trim(),
       estado: document.getElementById('fEstado').value,
-      nota: document.getElementById('fNota').value
+      nota: document.getElementById('fNota').value.trim()
     };
   } else if (type === 'peso') {
     url += 'peso';
     payload = {
-      fecha: document.getElementById('fFecha').value,
+      fecha: document.getElementById('fFecha').value.trim(),
       peso: parseFloat(document.getElementById('fPesoNum').value)
     };
   } else if (type === 'alerta') {
     url += 'alertas';
     payload = {
       tipo: document.getElementById('fTipo').value,
-      fecha: document.getElementById('fFecha').value,
-      titulo: document.getElementById('fTitulo').value.toUpperCase(),
-      descripcion: document.getElementById('fDesc').value
+      titulo: document.getElementById('fTitulo').value.toUpperCase().trim(),
+      descripcion: document.getElementById('fDesc').value.trim()
     };
   } else if (type === 'laboratorio') {
     url += 'laboratorios';
     payload = {
-      examen: document.getElementById('fExamen').value,
-      fecha: document.getElementById('fFecha').value,
-      laboratorio: document.getElementById('fLab').value,
-      notas_generales: document.getElementById('fNotas').value
+      examen: document.getElementById('fExamen').value.trim(),
+      fecha: document.getElementById('fFecha').value.trim(),
+      laboratorio: document.getElementById('fLab').value.trim()
     };
   } else if (type === 'imagen') {
     url += 'imagenes';
     payload = {
       tipo: document.getElementById('fTipo').value,
-      nombre: document.getElementById('fNombre').value,
-      fecha: document.getElementById('fFecha').value,
-      informe: document.getElementById('fInforme').value,
+      nombre: document.getElementById('fNombre').value.trim(),
+      fecha: document.getElementById('fFecha').value.trim(),
+      informe: document.getElementById('fInforme').value.trim(),
       imagen_url: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=400&h=300'
     };
   }
@@ -1248,9 +1047,9 @@ async function handleSaveRecord(e, type) {
   }
 }
 
-// Delete Record Generic
+// Delete Record
 async function deleteRecord(type, id) {
-  if (!confirm('¿Estás seguro de eliminar este registro?')) return;
+  if (!confirm('¿Eliminar este registro clínico?')) return;
   let url = `/api/pets/${activePetId}/`;
   if (type === 'diagnostico') url += `diagnosticos/${id}`;
   if (type === 'vacuna') url += `vacunas/${id}`;
@@ -1271,32 +1070,120 @@ async function deleteRecord(type, id) {
   }
 }
 
+// Pet Switcher Dropdown Modal
+function openPetSwitcherModal() {
+  modalCard.innerHTML = `
+    <div class="sheet-drag-handle"></div>
+    <button class="sheet-close-btn" onclick="closeModal()">✕</button>
+    <h3 class="sheet-title">Mis Mascotas</h3>
+    <div style="display:flex; flex-direction:column; gap:0.5rem; margin-bottom:1rem;">
+      ${petsList.map(p => `
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:0.75rem 1rem; border-radius:var(--radius-md); background:${p.id === activePetId ? '#e0f7fe' : 'var(--bg-surface)'}; cursor:pointer;" onclick="loadActivePet('${p.id}'); closeModal();">
+          <div style="display:flex; align-items:center; gap:0.75rem;">
+            <img src="${p.foto}" style="width:36px; height:36px; border-radius:50%; object-fit:cover;" onerror="this.src='/static/favicon.svg'">
+            <div>
+              <strong style="font-size:15px; color:${p.id === activePetId ? 'var(--secondary)' : 'var(--text-main)'};">${escapeHtml(p.nombre)}</strong>
+              <div style="font-size:12px; color:var(--text-muted);">${escapeHtml(p.especie)} • ${escapeHtml(p.raza)}</div>
+            </div>
+          </div>
+          ${p.id === activePetId ? '<span style="color:var(--secondary); font-weight:900;">✓ Activa</span>' : ''}
+        </div>
+      `).join('')}
+    </div>
+    <button class="btn-action-primary" style="width:100%;" onclick="closeModal(); openAddPetModal();">+ Agregar Otra Mascota</button>
+  `;
+  modalBackdrop.style.display = 'flex';
+}
+
+// Add Pet Modal
+function openAddPetModal() {
+  modalCard.innerHTML = `
+    <div class="sheet-drag-handle"></div>
+    <button class="sheet-close-btn" onclick="closeModal()">✕</button>
+    <h3 class="sheet-title">Registrar Nueva Mascota</h3>
+    <form onsubmit="handleCreateNewPet(event)">
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label class="form-label">Nombre</label>
+          <input type="text" class="form-input" id="npNombre" placeholder="Ej: Rocky" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Especie</label>
+          <select class="form-select" id="npEspecie">
+            <option value="Perro">Perro</option>
+            <option value="Gato">Gato</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label class="form-label">Raza</label>
+          <input type="text" class="form-input" id="npRaza" placeholder="Ej: Labrador">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Edad</label>
+          <input type="text" class="form-input" id="npEdad" placeholder="Ej: 2 años">
+        </div>
+      </div>
+      <button type="submit" class="btn-action-primary" style="width:100%; padding:0.8rem; margin-top:0.5rem;">+ Crear Ficha Clínica</button>
+    </form>
+  `;
+  modalBackdrop.style.display = 'flex';
+}
+
+async function handleCreateNewPet(e) {
+  e.preventDefault();
+  const payload = {
+    nombre: document.getElementById('npNombre').value.trim(),
+    especie: document.getElementById('npEspecie').value,
+    raza: document.getElementById('npRaza').value.trim(),
+    edad: document.getElementById('npEdad').value.trim(),
+    sexo: 'Macho',
+    peso_actual: '10 kg',
+    propietario: { nombre: 'Tutor Sania Pet' }
+  };
+
+  try {
+    const res = await fetch('/api/pets', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (res.ok) {
+      const created = await res.json();
+      closeModal();
+      await loadPets();
+      await loadActivePet(created.id);
+    }
+  } catch (err) {
+    alert('Error al registrar: ' + err.message);
+  }
+}
+
 // Alert Action Modal
 function openAlertActionModal(alertId) {
   const alertItem = (activePet.alertas || []).find(a => a.id === alertId);
   if (!alertItem) return;
 
-  modalContent.innerHTML = `
-    <button class="modal-close-btn" onclick="closeModal()">&times;</button>
-    <div style="display:flex; align-items:center; gap:0.5rem; color:var(--danger); margin-bottom:0.5rem;">
-      <span style="font-size:1.5rem;">⚠️</span>
-      <h3 class="modal-title" style="margin:0;">${escapeHtml(alertItem.titulo)}</h3>
+  modalCard.innerHTML = `
+    <div class="sheet-drag-handle"></div>
+    <button class="sheet-close-btn" onclick="closeModal()">✕</button>
+    <div style="text-align:center; margin-bottom:1rem;">
+      <span style="font-size:32px;">⚠️</span>
+      <h3 style="font-size:17px; font-weight:900; color:#991b1b; margin-top:0.25rem;">${escapeHtml(alertItem.titulo)}</h3>
+      <p style="font-size:13px; color:var(--text-muted); margin-top:0.35rem;">${escapeHtml(alertItem.descripcion)}</p>
     </div>
-    <p style="background:var(--bg-surface); padding:1rem; border-radius:var(--radius-md); font-size:0.875rem; color:var(--text-main); margin-bottom:1.5rem;">
-      ${escapeHtml(alertItem.descripcion)}
-    </p>
-    <div style="display:flex; flex-direction:column; gap:0.75rem;">
-      <button class="btn btn-primary" onclick="handleAlertAction('${alertId}', 'solucionar')">
-        ✅ Marcar como Solucionado
+    <div style="display:flex; flex-direction:column; gap:0.5rem;">
+      <button class="btn-action-primary" style="background:#10b981;" onclick="handleAlertAction('${alertId}', 'solucionar')">
+        ✓ Marcar como Solucionado
       </button>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
-        <button class="btn btn-outline" onclick="handleAlertAction('${alertId}', 'posponer')">
-          ⏰ Posponer
-        </button>
-        <button class="btn btn-outline" style="color:var(--danger);" onclick="handleAlertAction('${alertId}', 'olvidar')">
-          🗑️ Descartar
-        </button>
-      </div>
+      <button class="btn-action-primary" style="background:#f59e0b;" onclick="handleAlertAction('${alertId}', 'posponer')">
+        ⏰ Posponer Alerta
+      </button>
+      <button class="btn-action-primary" style="background:var(--bg-surface); color:var(--text-main);" onclick="handleAlertAction('${alertId}', 'olvidar')">
+        🗑️ Descartar
+      </button>
     </div>
   `;
   modalBackdrop.style.display = 'flex';
@@ -1319,45 +1206,34 @@ function openLabDetailsModal(labId) {
   const lab = (activePet.laboratorios || []).find(l => l.id === labId);
   if (!lab) return;
 
-  modalContent.innerHTML = `
-    <button class="modal-close-btn" onclick="closeModal()">&times;</button>
-    <h3 class="modal-title">${escapeHtml(lab.examen)}</h3>
-    <p class="modal-subtitle">Fecha: ${escapeHtml(lab.fecha)} • ${escapeHtml(lab.laboratorio)}</p>
-    
-    <div class="table-wrap" style="margin-bottom:1.25rem;">
-      <table class="custom-table">
-        <thead>
-          <tr>
-            <th>Parámetro</th>
-            <th>Resultado</th>
-            <th>Rango Ref.</th>
-            <th>Estado</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${(lab.resultados && lab.resultados.length > 0) ? lab.resultados.map(r => `
-            <tr>
-              <td><strong>${escapeHtml(r.nombre)}</strong></td>
-              <td><span style="font-family:var(--font-mono); font-weight:800;">${escapeHtml(r.resultado)} ${escapeHtml(r.unidad)}</span></td>
-              <td style="color:var(--text-muted); font-size:0.8rem;">${escapeHtml(r.rango_referencia)}</td>
-              <td>
-                <span class="badge ${r.estado === 'Normal' ? 'badge-success' : 'badge-danger'}">${escapeHtml(r.estado)}</span>
-              </td>
-            </tr>
-          `).join('') : '<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">Sin parámetros específicos cargados.</td></tr>'}
-        </tbody>
-      </table>
+  modalCard.innerHTML = `
+    <div class="sheet-drag-handle"></div>
+    <button class="sheet-close-btn" onclick="closeModal()">✕</button>
+    <h3 class="sheet-title">${escapeHtml(lab.examen)}</h3>
+    <p style="font-size:12px; color:var(--text-light); text-align:center; margin-top:-0.75rem; margin-bottom:1rem;">
+      ${escapeHtml(lab.fecha)} • ${escapeHtml(lab.laboratorio)}
+    </p>
+
+    <div style="display:flex; flex-direction:column; gap:0.4rem; margin-bottom:1rem;">
+      ${(lab.resultados && lab.resultados.length > 0) ? lab.resultados.map(r => `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:0.6rem 0.8rem; background:var(--bg-surface); border-radius:var(--radius-sm);">
+          <div>
+            <strong style="font-size:13px;">${escapeHtml(r.nombre)}</strong>
+            <div style="font-size:11px; color:var(--text-light);">Ref: ${escapeHtml(r.rango_referencia)}</div>
+          </div>
+          <div style="text-align:right;">
+            <strong style="font-size:14px;">${escapeHtml(r.resultado)} ${escapeHtml(r.unidad)}</strong>
+            <div><span class="badge-tag ${r.estado === 'Normal' ? 'badge-green' : 'badge-red'}" style="font-size:9.5px;">${escapeHtml(r.estado)}</span></div>
+          </div>
+        </div>
+      `).join('') : '<p style="color:var(--text-muted); font-size:13px;">Sin parámetros específicos.</p>'}
     </div>
 
     ${lab.notas_generales ? `
-      <div style="background:var(--bg-surface); padding:1rem; border-radius:var(--radius-md); font-size:0.85rem;">
-        <strong>Notas del Patólogo:</strong>
-        <p style="margin-top:0.35rem; color:var(--text-muted);">${escapeHtml(lab.notas_generales)}</p>
+      <div style="background:var(--bg-surface); padding:0.85rem; border-radius:var(--radius-sm); font-size:12px; color:var(--text-muted); line-height:1.4; margin-bottom:0.75rem;">
+        <strong>Notas:</strong> ${escapeHtml(lab.notas_generales)}
       </div>
     ` : ''}
-    <div style="display:flex; justify-content:flex-end; margin-top:1rem;">
-      <button class="btn btn-outline btn-sm" style="color:var(--danger);" onclick="deleteRecord('laboratorio', '${lab.id}')">🗑️ Eliminar Examen</button>
-    </div>
   `;
   modalBackdrop.style.display = 'flex';
 }
@@ -1367,31 +1243,28 @@ function openImageDetailsModal(imgId) {
   const img = (activePet.imagenes || []).find(i => i.ID === imgId);
   if (!img) return;
 
-  modalContent.innerHTML = `
-    <button class="modal-close-btn" onclick="closeModal()">&times;</button>
-    <h3 class="modal-title">${escapeHtml(img.nombre)}</h3>
-    <p class="modal-subtitle">Estudio: ${escapeHtml(img.tipo)} • Fecha: ${escapeHtml(img.fecha)}</p>
-    
-    <div style="width:100%; max-height:260px; border-radius:var(--radius-md); overflow:hidden; margin-bottom:1rem; background:#000;">
+  modalCard.innerHTML = `
+    <div class="sheet-drag-handle"></div>
+    <button class="sheet-close-btn" onclick="closeModal()">✕</button>
+    <h3 class="sheet-title">${escapeHtml(img.nombre)}</h3>
+    <p style="font-size:12px; color:var(--text-light); text-align:center; margin-top:-0.75rem; margin-bottom:1rem;">
+      ${escapeHtml(img.tipo)} • ${escapeHtml(img.fecha)}
+    </p>
+
+    <div style="width:100%; height:200px; border-radius:var(--radius-md); overflow:hidden; background:#000; margin-bottom:1rem;">
       <img src="${img.imagen_url}" style="width:100%; height:100%; object-fit:contain;" onerror="this.src='/static/favicon.svg'">
     </div>
 
-    <div style="background:var(--bg-surface); padding:1rem; border-radius:var(--radius-md); font-size:0.875rem; line-height:1.6;">
+    <div style="background:var(--bg-surface); padding:0.85rem; border-radius:var(--radius-sm); font-size:12.5px; line-height:1.4;">
       <strong>Informe Diagnóstico:</strong>
-      <p style="margin-top:0.35rem; color:var(--text-main);">${escapeHtml(img.informe)}</p>
-      <div style="margin-top:0.5rem; font-size:0.8rem; color:var(--text-muted);">
-        👨‍⚕️ <strong>Médico Radiólogo:</strong> ${escapeHtml(img.doctor || 'Especialista')}
-      </div>
-    </div>
-    <div style="display:flex; justify-content:flex-end; margin-top:1rem;">
-      <button class="btn btn-outline btn-sm" style="color:var(--danger);" onclick="deleteRecord('imagen', ${img.ID})">🗑️ Eliminar Estudio</button>
+      <p style="margin-top:4px; color:var(--text-main);">${escapeHtml(img.informe)}</p>
     </div>
   `;
   modalBackdrop.style.display = 'flex';
 }
 
-// Update Profile Form Handlers
-async function handleUpdatePetProfile(e) {
+// Profile Save Handlers
+async function handleSavePetProfile(e) {
   e.preventDefault();
   const payload = {
     nombre: document.getElementById('pNombre').value.trim(),
@@ -1399,11 +1272,9 @@ async function handleUpdatePetProfile(e) {
     raza: document.getElementById('pRaza').value.trim(),
     edad: document.getElementById('pEdad').value.trim(),
     sexo: document.getElementById('pSexo').value.trim(),
-    fecha_nacimiento: document.getElementById('pFechaNac').value.trim(),
     microchip: document.getElementById('pMicrochip').value.trim(),
     seguro: document.getElementById('pSeguro').value.trim(),
-    clinica_frecuente: document.getElementById('pClinica').value.trim(),
-    foto: document.getElementById('pFoto').value.trim()
+    clinica_frecuente: document.getElementById('pClinica').value.trim()
   };
 
   try {
@@ -1413,23 +1284,21 @@ async function handleUpdatePetProfile(e) {
       body: JSON.stringify(payload)
     });
     if (res.ok) {
-      alert('¡Perfil de la mascota actualizado!');
+      alert('¡Perfil actualizado con éxito!');
       await loadPets();
       await loadActivePet(activePetId);
     }
   } catch (err) {
-    alert('Error al actualizar: ' + err.message);
+    alert('Error: ' + err.message);
   }
 }
 
-async function handleUpdateOwner(e) {
+async function handleSaveOwnerProfile(e) {
   e.preventDefault();
   const payload = {
     nombre: document.getElementById('oNombre').value.trim(),
-    rut: document.getElementById('oRut').value.trim(),
     telefono: document.getElementById('oTelefono').value.trim(),
-    email: document.getElementById('oEmail').value.trim(),
-    direccion: document.getElementById('oDireccion').value.trim()
+    email: document.getElementById('oEmail').value.trim()
   };
 
   try {
@@ -1439,11 +1308,11 @@ async function handleUpdateOwner(e) {
       body: JSON.stringify(payload)
     });
     if (res.ok) {
-      alert('¡Datos del propietario actualizados!');
+      alert('¡Datos del tutor guardados!');
       await loadActivePet(activePetId);
     }
   } catch (err) {
-    alert('Error al actualizar: ' + err.message);
+    alert('Error: ' + err.message);
   }
 }
 
@@ -1455,7 +1324,6 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
-// Initialize
+// Boot Initialization
 initTheme();
-setupNavigation();
 loadPets();

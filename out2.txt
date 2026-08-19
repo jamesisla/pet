@@ -1,0 +1,20 @@
+7933 alpine      20   0  2744  2480  1352 R   0.7  0.3  0:00.17 htop
+    1 root        20   0  1636   964    24 S   0.0  0.1  0:00.60 /sbin/init
+ 1861 root        20   0  1636   836     4 S   0.0  0.1  0:00.00 /sbin/acpid -f
+ 1992 root        20   0  1652   948    52 S   0.0  0.1  0:02.31 /sbin/syslogd -t -n
+ 2071 dhcpcd      20   0  1340  1016   256 S   0.0  0.1  0:01.41 dhcpcd: eth0 [ip4] [ip6]
+ 2072 root        20   0  1316   904   204 S   0.0  0.1  0:00.02 dhcpcd: [privileged proxy] eth0 [ip4] [ip6]
+ 2073 dhcpcd      20   0  1288   572    12 S   0.0  0.1  0:00.00 dhcpcd: [network proxy] eth0 [ip4] [ip6]
+ 2074 dhcpcd      20   0  1288   636    36 S   0.0  0.1  0:00.00 dhcpcd: [control proxy] eth0 [ip4] [ip6]
+ 2082 dhcpcd      20   0  1320   572    12 S   0.0  0.1  0:00.00 dhcpcd: [BPF ARP] eth0 10.0.0.61
+ 2084 dhcpcd      20   0  1312   592    12 S   0.0  0.1  0:00.00 dhcpcd: [DHCP6 proxy] fe80::17ff:fe01:a5c9
+ 2107 dhcpcd      20   0  1316   688   108 S   0.0  0.1  0:00.00 dhcpcd: [BOOTP proxy] 10.0.0.61
+ 2139 chrony      20   0  1352   952   124 S   0.0  0.1  0:02.63 /usr/sbin/chronyd -f /etc/chrony/chrony.conf -F 1
+ 2140 chrony      20   0  1304   660    60 S   0.0  0.1  0:00.00 /usr/sbin/chronyd -f /etc/chrony/chrony.conf -F 1
+ 2161 root        20   0  1652   948     4 S   0.0  0.1  0:00.00 /bin/sh /usr/sbin/cloud-init-hotplugd
+ 2347 root        20   0  6640  3172   360 S   0.0  0.3  1:16.09 sshd: /usr/sbin/sshd [listener] 0 of 10-100 startups
+ 2354 root        20   0  1636   852     4 S   0.0  0.1  0:00.00 /sbin/getty 38400 tty1
+ 2355 root        20   0  1636   940     4 S   0.0  0.1  0:00.00 /sbin/getty -L 115200 ttyS0 vt100
+ 5028 root        20   0  7284  5328  1224 S   0.0  0.5  0:00.00 sshd-session: alpine [priv]
+ 5030 alpine      20   0  7584  4672  1524 S   0.0  0.5  0:00.34 sshd-session: alpine@pts/0
+ 5031 alpine      20   0  1732  1332   208 S   0.0  0.1  0:00.01 -sh

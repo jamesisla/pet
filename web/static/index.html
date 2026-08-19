@@ -3,134 +3,122 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Sania Pet — Ficha Médica Veterinaria Inteligente</title>
+  <title>Sania Pet — Ficha Médica Veterinaria</title>
   <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 
-  <div class="app-layout">
-    <!-- Top Navbar -->
-    <header class="top-navbar">
-      <div class="brand-section">
-        <div class="brand-logo-wrap">🐾</div>
-        <div class="brand-info">
-          <div class="brand-title">sania<span>pet</span></div>
-          <div class="brand-subtitle">Ficha Médica Veterinaria</div>
+  <div class="app-wrapper">
+    <!-- Header (Matching 1.png) -->
+    <header class="mobile-header">
+      <button class="pet-selector-trigger" id="petSelectorBtn" onclick="openPetSwitcherModal()">
+        <img id="headerPetAvatar" src="/static/favicon.svg" alt="Avatar" class="header-avatar" onerror="this.src='/static/favicon.svg'">
+        <div class="header-pet-info">
+          <span class="header-pet-label">MASCOTA ACTIVA</span>
+          <span class="header-pet-name">
+            <span id="headerPetName">Luna (Perro)</span>
+            <span class="dropdown-arrow">⌵</span>
+          </span>
         </div>
-      </div>
+      </button>
 
-      <!-- Active Pet Switcher -->
-      <div class="pet-switcher" id="petSwitcher">
-        <!-- Rendered dynamically -->
-      </div>
-
-      <!-- Actions -->
-      <div class="navbar-actions">
-        <button id="addPetBtn" class="btn btn-outline btn-sm" title="Agregar otra mascota">
-          <span>+ Mascota</span>
+      <div class="header-actions">
+        <button class="btn-new-pet" id="headerNewPetBtn" onclick="openAddPetModal()">
+          <span>+ Nueva</span>
         </button>
-        <button id="quickAddBtn" class="btn btn-primary btn-sm">
-          <span>+ Registro</span>
-        </button>
-        <button id="themeToggleBtn" class="btn btn-outline btn-sm" title="Cambiar tema">
-          🌙
+        <button class="btn-icon-round" id="settingsBtn" title="Configuración / Tema" onclick="toggleTheme()">
+          ⚙️
         </button>
       </div>
     </header>
 
-    <!-- App Body with Desktop Sidebar and Content -->
-    <div class="app-body">
-      <!-- Sidebar (Desktop) -->
-      <nav class="sidebar-nav">
-        <button class="nav-item active" data-tab="dashboard">
+    <!-- App Content Body (Sidebar on Desktop, Full view on Mobile) -->
+    <div class="app-content-body">
+      <!-- Desktop Sidebar -->
+      <aside class="desktop-sidebar">
+        <button class="sidebar-link active" data-tab="dashboard" onclick="switchTab('dashboard')">
           <span>🏠</span>
-          <span>Resumen General</span>
+          <span>Inicio / Resumen</span>
         </button>
-        <button class="nav-item" data-tab="consultas">
+        <button class="sidebar-link" data-tab="consultas" onclick="switchTab('consultas')">
           <span>🩺</span>
-          <span>Consultas & Diagnósticos</span>
+          <span>Consultas</span>
         </button>
-        <button class="nav-item" data-tab="vacunas">
-          <span>💉</span>
-          <span>Vacunas & Inmunización</span>
+        <button class="sidebar-link" data-tab="vacunas" onclick="switchTab('vacunas')">
+          <span>🛡️</span>
+          <span>Vacunas</span>
         </button>
-        <button class="nav-item" data-tab="desparasitaciones">
-          <span>🪱</span>
+        <button class="sidebar-link" data-tab="desparasitaciones" onclick="switchTab('desparasitaciones')">
+          <span>🪲</span>
           <span>Desparasitaciones</span>
         </button>
-        <button class="nav-item" data-tab="medicamentos">
+        <button class="sidebar-link" data-tab="medicamentos" onclick="switchTab('medicamentos')">
           <span>💊</span>
-          <span>Medicamentos</span>
+          <span>Tratamientos</span>
         </button>
-        <button class="nav-item" data-tab="laboratorios">
+        <button class="sidebar-link" data-tab="laboratorios" onclick="switchTab('laboratorios')">
           <span>🧪</span>
           <span>Laboratorios</span>
         </button>
-        <button class="nav-item" data-tab="imagenes">
+        <button class="sidebar-link" data-tab="imagenes" onclick="switchTab('imagenes')">
           <span>🩻</span>
           <span>Imágenes Médicas</span>
         </button>
-        <button class="nav-item" data-tab="diario">
-          <span>📖</span>
+        <button class="sidebar-link" data-tab="diario" onclick="switchTab('diario')">
+          <span>📋</span>
           <span>Diario de Salud</span>
         </button>
-        <button class="nav-item" data-tab="peso">
+        <button class="sidebar-link" data-tab="peso" onclick="switchTab('peso')">
           <span>⚖️</span>
-          <span>Historial de Peso</span>
+          <span>Control de Peso</span>
         </button>
-        <button class="nav-item" data-tab="alertas">
+        <button class="sidebar-link" data-tab="alertas" onclick="switchTab('alertas')">
           <span>🔔</span>
           <span>Alertas Activas</span>
-          <span class="nav-item-badge" id="sidebarAlertCount" style="display:none;">0</span>
         </button>
-        <button class="nav-item" data-tab="perfil">
+        <button class="sidebar-link" data-tab="perfil" onclick="switchTab('perfil')">
           <span>👤</span>
-          <span>Perfil & Propietario</span>
+          <span>Perfil Mascota</span>
         </button>
-      </nav>
+      </aside>
 
-      <!-- Main Content Area -->
-      <main class="content-area" id="mainContent">
-        <!-- Rendered by app.js based on active tab -->
-        <div style="text-align: center; padding: 4rem 1rem; color: var(--text-muted);">
-          <p>Cargando ficha médica de Sania Pet...</p>
-        </div>
+      <!-- Main Scrollable Content Area -->
+      <main class="main-view-container" id="mainContent">
+        <!-- Rendered dynamically by app.js -->
       </main>
     </div>
 
-    <!-- Bottom Navigation Bar (Mobile) -->
-    <nav class="bottom-navbar">
-      <button class="bottom-nav-btn active" data-tab="dashboard">
-        <span class="icon">🏠</span>
+    <!-- Mobile Bottom Navigation Bar (Matching 1.png) -->
+    <nav class="mobile-bottom-bar">
+      <button class="bar-tab-btn active" data-tab="dashboard" onclick="switchTab('dashboard')">
+        <span class="tab-icon">🏠</span>
         <span>Inicio</span>
       </button>
-      <button class="bottom-nav-btn" data-tab="consultas">
-        <span class="icon">🩺</span>
-        <span>Consultas</span>
+      <button class="bar-tab-btn" data-tab="diario" onclick="switchTab('diario')">
+        <span class="tab-icon">📋</span>
+        <span>Diario</span>
       </button>
-      <button class="bottom-nav-btn" data-tab="vacunas">
-        <span class="icon">💉</span>
-        <span>Vacunas</span>
-      </button>
-      <button class="bottom-nav-btn" data-tab="alertas">
-        <span class="icon">🔔</span>
+      
+      <!-- Smart Protruding Center Action Button -->
+      <button class="center-fab-btn" id="centerFabBtn" onclick="handleSmartActionClick()" title="Agregar">+</button>
+
+      <button class="bar-tab-btn" data-tab="alertas" onclick="switchTab('alertas')">
+        <span class="tab-icon">🔔</span>
+        <span class="bar-alert-counter" id="bottomAlertBadge" style="display:none;">0</span>
         <span>Alertas</span>
       </button>
-      <button class="bottom-nav-btn" data-tab="perfil">
-        <span class="icon">👤</span>
+      <button class="bar-tab-btn" data-tab="perfil" onclick="switchTab('perfil')">
+        <span class="tab-icon">👤</span>
         <span>Perfil</span>
       </button>
     </nav>
-
-    <!-- Mobile Floating Action Button -->
-    <button class="fab-btn" id="mobileFab" title="Crear registro">+</button>
   </div>
 
-  <!-- Dynamic Modal Container -->
-  <div id="modalBackdrop" class="modal-backdrop" style="display: none;">
-    <div class="modal-content" id="modalContent">
-      <!-- Modal dynamically injected by app.js -->
+  <!-- Bottom Sheet / Modal Container (Matching 2.png) -->
+  <div id="modalBackdrop" class="bottom-sheet-backdrop" style="display: none;">
+    <div class="bottom-sheet-card" id="modalCard">
+      <!-- Dynamically injected by app.js -->
     </div>
   </div>
 
