@@ -93,6 +93,14 @@ func Run() {
 	app.Use(cors.New())
 	app.Use(helmet.New())
 
+	// Disable browser caching for development/production live updates
+	app.Use(func(c *fiber.Ctx) error {
+		c.Set("Cache-Control", "no-cache, no-store, must-revalidate")
+		c.Set("Pragma", "no-cache")
+		c.Set("Expires", "0")
+		return c.Next()
+	})
+
 	// Static assets
 	app.Static("/static", staticDir, fiber.Static{
 		ByteRange: true,
