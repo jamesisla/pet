@@ -16,7 +16,10 @@ type Alerta struct {
 	Tipo        string `json:"tipo"` // 'critica' | 'preventiva'
 	Titulo      string `json:"titulo"`
 	Descripcion string `json:"descripcion"`
-	Estado      string `json:"estado"` // 'activa' | 'pospuesta' | 'solucionada' | 'olvidada'
+	Estado      string `json:"estado"` // 'activa' | 'pospuesta' | 'solucionada' | 'descartada' | 'olvidada'
+	Origen      string `json:"origen,omitempty"`    // 'inteligente' | 'manual'
+	ReglaKey    string `json:"regla_key,omitempty"` // 'antirrabica' | 'polivalente' | 'microchip' | 'desparasitacion'
+	CicloRef    string `json:"ciclo_ref,omitempty"` // Identificador de ciclo para evitar duplicar alertas descartadas
 }
 
 // Diagnostico representa una consulta médica o diagnóstico clínico

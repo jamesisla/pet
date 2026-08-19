@@ -531,13 +531,24 @@ function renderCurrentView() {
 // 1. Dashboard View (Exact 1.png Layout with Premium SVG Icons)
 function renderDashboard() {
   const p = activePet;
-  const activeAlerts = (p.alertas || []).filter(a => !a.estado || a.estado === 'activa');
+  // Filter active alerts
+  const allActiveAlerts = (p.alertas || []).filter(a => !a.estado || a.estado === 'activa');
+  // Prioritize critical alerts first
+  allActiveAlerts.sort((a, b) => {
+    const scoreA = a.tipo === 'critica' ? 0 : 1;
+    const scoreB = b.tipo === 'critica' ? 0 : 1;
+    return scoreA - scoreB;
+  });
+
+  // Limit to max 3 on dashboard
+  const displayedAlerts = allActiveAlerts.slice(0, 3);
+  const remainingCount = allActiveAlerts.length - displayedAlerts.length;
 
   mainContent.innerHTML = `
-    <!-- Ultra-Compact Active Alerts Container (Minimum Vertical Space) -->
-    ${activeAlerts.length > 0 ? `
+    <!-- Ultra-Compact Active Alerts Container (Max 3 on Dashboard) -->
+    ${displayedAlerts.length > 0 ? `
       <div class="alerts-compact-container">
-        ${activeAlerts.map(a => `
+        ${displayedAlerts.map(a => `
           <div class="alert-compact-row ${a.tipo}" onclick="openAlertActionModal('${a.id}')" title="Clic para gestionar alerta">
             <div class="alert-compact-left">
               <div class="alert-compact-icon">
@@ -545,9 +556,15 @@ function renderDashboard() {
               </div>
               <span class="alert-compact-title">${escapeHtml(a.titulo)}</span>
             </div>
-            <span class="alert-compact-tag">ALERTA</span>
+            <span class="alert-compact-tag">${a.tipo === 'critica' ? 'CRÍTICA' : (a.regla_key === 'microchip' || a.regla_key === 'antirrabica' ? 'LEY 21.020' : 'ALERTA')}</span>
           </div>
         `).join('')}
+        ${remainingCount > 0 ? `
+          <button class="btn-alerts-see-all" onclick="switchTab('alertas')" title="Ver todas las alertas clínicas">
+            <span>Ver todas las alertas activas (+${remainingCount})</span>
+            <svg class="svg-icon-sm" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        ` : ''}
       </div>
     ` : ''}
 
@@ -920,31 +937,86 @@ function renderPeso() {
   `;
 }
 
-// 10. Alertas View
+// 10. Alertas View (Active Alerts + Full Clinical History)
 function renderAlertas() {
   const p = activePet;
+  const allAlerts = p.alertas || [];
+  const activeAlerts = allAlerts.filter(a => !a.estado || a.estado === 'activa');
+  const historyAlerts = allAlerts.filter(a => a.estado && a.estado !== 'activa');
+
+  // Sort active: critical first
+  activeAlerts.sort((a, b) => {
+    const scoreA = a.tipo === 'critica' ? 0 : 1;
+    const scoreB = b.tipo === 'critica' ? 0 : 1;
+    return scoreA - scoreB;
+  });
+
   mainContent.innerHTML = `
     <div class="subview-nav-header">
       <button class="btn-back-link" onclick="switchTab('dashboard')">‹ Volver al Inicio</button>
-      <span class="subview-title">Alertas</span>
+      <span class="subview-title">Alertas Clínicas & Recordatorios</span>
       <button class="btn-action-primary" onclick="openAddRecordModal('alerta')">+ Nueva</button>
     </div>
 
-    <div class="card-section">
-      ${(p.alertas && p.alertas.length > 0) ? p.alertas.map(a => `
+    <!-- 1. Alertas Activas -->
+    <div class="card-section" style="margin-bottom:1.25rem;">
+      <div class="card-section-header" style="margin-bottom:0.75rem;">
+        <div class="card-section-title">
+          <span>⚠️</span>
+          <span>Alertas Activas (${activeAlerts.length})</span>
+        </div>
+      </div>
+
+      ${activeAlerts.length > 0 ? activeAlerts.map(a => `
         <div class="alert-compact-row ${a.tipo}" onclick="openAlertActionModal('${a.id}')" style="margin-bottom:0.65rem; align-items:flex-start;">
           <div class="alert-compact-left" style="align-items:flex-start;">
             <div class="alert-compact-icon" style="margin-top:2px;">
               ${Icons.alert_triangle}
             </div>
             <div style="min-width:0; flex:1; overflow:hidden;">
-              <div class="alert-compact-title" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(a.titulo)}</div>
-              <div style="font-size:11.5px; color:var(--text-muted); margin-top:2px; word-break:break-word; line-height:1.35;">${escapeHtml(a.descripcion)}</div>
+              <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
+                <span class="alert-compact-title" style="white-space:normal; line-height:1.25;">${escapeHtml(a.titulo)}</span>
+                ${(a.origen === 'inteligente' || a.regla_key) ? `
+                  <span class="badge-smart-normativa">🇨🇱 Inteligente</span>
+                ` : ''}
+              </div>
+              <div style="font-size:12px; color:var(--text-muted); margin-top:3px; word-break:break-word; line-height:1.4;">${escapeHtml(a.descripcion)}</div>
             </div>
           </div>
-          <span class="alert-compact-tag" style="margin-top:2px;">${escapeHtml(a.estado || 'Activa')}</span>
+          <span class="alert-compact-tag" style="margin-top:2px;">${a.tipo === 'critica' ? 'CRÍTICA' : (a.regla_key === 'microchip' || a.regla_key === 'antirrabica' ? 'LEY 21.020' : 'PREVENTIVA')}</span>
         </div>
-      `).join('') : '<p style="color:var(--text-muted); font-size:13px; text-align:center; padding:1rem 0;">Sin alertas registradas.</p>'}
+      `).join('') : `
+        <div style="text-align:center; padding:1.5rem 0.5rem; color:var(--text-muted);">
+          <div style="font-size:28px; margin-bottom:0.25rem;">🎉</div>
+          <div style="font-weight:700; color:var(--text-main); font-size:13.5px;">¡Todo al día!</div>
+          <div style="font-size:12px; margin-top:2px;">${escapeHtml(p.nombre)} no tiene alertas clínicas ni vacunas pendientes.</div>
+        </div>
+      `}
+    </div>
+
+    <!-- 2. Historial de Alertas (Solucionadas, Descartadas o Pospuestas) -->
+    <div class="card-section">
+      <div class="card-section-header" style="margin-bottom:0.75rem;">
+        <div class="card-section-title">
+          <span>📋</span>
+          <span>Historial Clínico de Alertas (${historyAlerts.length})</span>
+        </div>
+      </div>
+
+      ${historyAlerts.length > 0 ? historyAlerts.map(a => `
+        <div class="alert-history-card">
+          <div class="alert-history-header">
+            <span style="font-size:12px; font-weight:800; color:var(--text-main);">${escapeHtml(a.titulo)}</span>
+            <span class="alert-status-badge ${a.estado || 'descartada'}">
+              ${a.estado === 'solucionada' ? '✓ Solucionada' : a.estado === 'pospuesta' ? '⏰ Pospuesta' : '🗑️ Descartada'}
+            </span>
+          </div>
+          <div style="font-size:11.5px; color:var(--text-muted); margin-top:2px; line-height:1.35;">${escapeHtml(a.descripcion)}</div>
+          ${a.fecha ? `<div style="font-size:10.5px; color:var(--text-light); margin-top:4px;">Registro: ${escapeHtml(a.fecha)}</div>` : ''}
+        </div>
+      `).join('') : `
+        <p style="color:var(--text-muted); font-size:12.5px; text-align:center; padding:1rem 0;">Aún no hay alertas en el historial.</p>
+      `}
     </div>
   `;
 }
@@ -1902,29 +1974,66 @@ function openAlertActionModal(alertId) {
   const alertItem = (activePet.alertas || []).find(a => a.id === alertId);
   if (!alertItem) return;
 
+  const isCritica = alertItem.tipo === 'critica';
+  const isNormativa = alertItem.regla_key === 'microchip' || alertItem.regla_key === 'antirrabica';
+
   modalCard.innerHTML = `
     <div class="sheet-drag-handle"></div>
     <button class="sheet-close-btn" onclick="closeModal()">✕</button>
-    <div style="text-align:center; margin-bottom:1rem;">
-      <div style="width:48px; height:48px; border-radius:14px; background:#fef2f2; color:#ef4444; display:flex; align-items:center; justify-content:center; margin:0 auto 0.5rem;">
+    <div style="text-align:center; margin-bottom:1.1rem;">
+      <div style="width:50px; height:50px; border-radius:14px; background:${isCritica ? '#fef2f2' : '#fffbeb'}; color:${isCritica ? '#ef4444' : '#f59e0b'}; display:flex; align-items:center; justify-content:center; margin:0 auto 0.6rem;">
         ${Icons.alert_triangle}
       </div>
-      <h3 style="font-size:17px; font-weight:900; color:#991b1b; margin-top:0.25rem;">${escapeHtml(alertItem.titulo)}</h3>
-      <p style="font-size:13px; color:var(--text-muted); margin-top:0.35rem;">${escapeHtml(alertItem.descripcion)}</p>
+      <div style="display:flex; justify-content:center; gap:0.4rem; margin-bottom:0.4rem;">
+        <span class="alert-compact-tag" style="${isCritica ? 'background:#fee2e2; color:#b91c1c;' : 'background:#fef3c7; color:#92400e;'}">
+          ${isCritica ? 'ALERTA CRÍTICA' : 'ALERTA PREVENTIVA'}
+        </span>
+        ${isNormativa ? `<span class="badge-smart-normativa">🇨🇱 LEY 21.020</span>` : ''}
+      </div>
+      <h3 style="font-size:16px; font-weight:900; color:var(--text-main); margin-top:0.25rem; line-height:1.3;">${escapeHtml(alertItem.titulo)}</h3>
+      <p style="font-size:13px; color:var(--text-muted); margin-top:0.45rem; line-height:1.45;">${escapeHtml(alertItem.descripcion)}</p>
     </div>
-    <div style="display:flex; flex-direction:column; gap:0.5rem;">
+
+    <div id="alertActionButtonsContainer" style="display:flex; flex-direction:column; gap:0.55rem;">
       <button class="btn-action-primary" style="background:#10b981;" onclick="handleAlertAction('${alertId}', 'solucionar')">
         ✓ Marcar como Solucionado
       </button>
       <button class="btn-action-primary" style="background:#f59e0b;" onclick="handleAlertAction('${alertId}', 'posponer')">
         ⏰ Posponer Alerta
       </button>
-      <button class="btn-action-primary" style="background:var(--bg-surface); color:var(--text-main);" onclick="handleAlertAction('${alertId}', 'olvidar')">
-        🗑️ Descartar
+      <button class="btn-action-primary" style="background:var(--bg-surface); color:#ef4444; border:1px solid #fca5a5;" onclick="promptDismissAlert('${alertId}')">
+        🗑️ Descartar / Eliminar Alerta
       </button>
+    </div>
+
+    <div id="alertConfirmDismissContainer" style="display:none; text-align:center; padding:0.5rem 0;">
+      <div style="font-size:14px; font-weight:800; color:#b91c1c; margin-bottom:0.35rem;">¿Estás seguro de que quieres eliminar esta alerta?</div>
+      <p style="font-size:12px; color:var(--text-muted); margin-bottom:0.85rem; line-height:1.4;">
+        Se registrará en el historial clínico de ${escapeHtml(activePet.nombre)} para evitar que vuelva a aparecer por el mismo evento.
+      </p>
+      <div style="display:flex; gap:0.6rem;">
+        <button type="button" class="btn-cancel-edit" style="flex:1;" onclick="cancelDismissAlert()">✕ Cancelar</button>
+        <button type="button" class="btn-action-primary" style="flex:1; background:#ef4444;" onclick="handleAlertAction('${alertId}', 'descartar')">
+          🗑️ Sí, Eliminar
+        </button>
+      </div>
     </div>
   `;
   modalBackdrop.style.display = 'flex';
+}
+
+function promptDismissAlert(alertId) {
+  const btns = document.getElementById('alertActionButtonsContainer');
+  const confirmBox = document.getElementById('alertConfirmDismissContainer');
+  if (btns) btns.style.display = 'none';
+  if (confirmBox) confirmBox.style.display = 'block';
+}
+
+function cancelDismissAlert() {
+  const btns = document.getElementById('alertActionButtonsContainer');
+  const confirmBox = document.getElementById('alertConfirmDismissContainer');
+  if (btns) btns.style.display = 'flex';
+  if (confirmBox) confirmBox.style.display = 'none';
 }
 
 async function handleAlertAction(alertId, action) {

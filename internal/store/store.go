@@ -45,6 +45,7 @@ func (s *PetStore) loadOrSeed() error {
 			var list []model.Pet
 			if err := json.Unmarshal(data, &list); err == nil && len(list) > 0 {
 				for _, pet := range list {
+					EvaluateSmartAlerts(&pet)
 					s.pets[pet.ID] = pet
 				}
 				return nil
@@ -52,7 +53,12 @@ func (s *PetStore) loadOrSeed() error {
 		}
 	}
 
-	s.pets = defaultPetsSeed()
+	seed := defaultPetsSeed()
+	for k, pet := range seed {
+		EvaluateSmartAlerts(&pet)
+		seed[k] = pet
+	}
+	s.pets = seed
 	return s.saveUnsafe()
 }
 
@@ -97,11 +103,16 @@ func (s *PetStore) GetAllSummary() []model.PetSummary {
 
 // GetByID returns the full medical record of a pet
 func (s *PetStore) GetByID(id string) (model.Pet, bool) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
 	p, ok := s.pets[id]
-	return p, ok
+	if !ok {
+		return p, false
+	}
+	EvaluateSmartAlerts(&p)
+	s.pets[id] = p
+	return p, true
 }
 
 // CreatePet adds a new pet to the database
@@ -175,6 +186,7 @@ func (s *PetStore) UpdatePet(id string, req model.PetUpdateRequest) (model.Pet, 
 	pet.Seguro = req.Seguro
 	pet.ClinicaFrecuente = req.ClinicaFrecuente
 
+	EvaluateSmartAlerts(&pet)
 	s.pets[id] = pet
 	if err := s.saveUnsafe(); err != nil {
 		return pet, true, err
@@ -234,13 +246,19 @@ func (s *PetStore) AddAlerta(petID string, req model.AlertaCreateRequest) (model
 		return model.Alerta{}, false, nil
 	}
 
+	fecha := req.Fecha
+	if fecha == "" {
+		fecha = time.Now().Format("2006-01-02")
+	}
+
 	alerta := model.Alerta{
 		ID:          fmt.Sprintf("al_%d", time.Now().UnixNano()%1000000),
-		Fecha:       req.Fecha,
+		Fecha:       fecha,
 		Tipo:        req.Tipo,
 		Titulo:      req.Titulo,
 		Descripcion: req.Descripcion,
 		Estado:      "activa",
+		Origen:      "manual",
 	}
 
 	pet.Alertas = append([]model.Alerta{alerta}, pet.Alertas...)
@@ -268,8 +286,10 @@ func (s *PetStore) ActionAlerta(petID, alertaID, action string) (model.Alerta, b
 					pet.Alertas[i].Estado = "pospuesta"
 				case "solucionar":
 					pet.Alertas[i].Estado = "solucionada"
-				case "olvidar":
-					pet.Alertas[i].Estado = "olvidada"
+					pet.Alertas[i].Fecha = time.Now().Format("2006-01-02 15:04")
+				case "descartar", "olvidar", "eliminar":
+					pet.Alertas[i].Estado = "descartada"
+					pet.Alertas[i].Fecha = time.Now().Format("2006-01-02 15:04")
 				default:
 					pet.Alertas[i].Estado = action
 				}
@@ -410,6 +430,7 @@ func (s *PetStore) AddVacuna(petID string, req model.VacunaCreateRequest) (model
 	}
 
 	pet.Vacunas = append([]model.Vacuna{vac}, pet.Vacunas...)
+	EvaluateSmartAlerts(&pet)
 	s.pets[petID] = pet
 	if err := s.saveUnsafe(); err != nil {
 		return vac, true, err
@@ -448,6 +469,7 @@ func (s *PetStore) UpdateVacuna(petID string, id int, req model.VacunaCreateRequ
 		return model.Vacuna{}, false, nil
 	}
 
+	EvaluateSmartAlerts(&pet)
 	s.pets[petID] = pet
 	if err := s.saveUnsafe(); err != nil {
 		return updated, true, err
@@ -480,6 +502,7 @@ func (s *PetStore) DeleteVacuna(petID string, id int) bool {
 	}
 
 	pet.Vacunas = newList
+	EvaluateSmartAlerts(&pet)
 	s.pets[petID] = pet
 	_ = s.saveUnsafe()
 	return true
@@ -509,6 +532,7 @@ func (s *PetStore) AddDesparasitacion(petID string, req model.DesparasitacionCre
 	}
 
 	pet.Desparasitaciones = append([]model.Desparasitacion{desp}, pet.Desparasitaciones...)
+	EvaluateSmartAlerts(&pet)
 	s.pets[petID] = pet
 	if err := s.saveUnsafe(); err != nil {
 		return desp, true, err
@@ -547,6 +571,7 @@ func (s *PetStore) UpdateDesparasitacion(petID string, id int, req model.Despara
 		return model.Desparasitacion{}, false, nil
 	}
 
+	EvaluateSmartAlerts(&pet)
 	s.pets[petID] = pet
 	if err := s.saveUnsafe(); err != nil {
 		return updated, true, err
@@ -579,6 +604,7 @@ func (s *PetStore) DeleteDesparasitacion(petID string, id int) bool {
 	}
 
 	pet.Desparasitaciones = newList
+	EvaluateSmartAlerts(&pet)
 	s.pets[petID] = pet
 	_ = s.saveUnsafe()
 	return true
