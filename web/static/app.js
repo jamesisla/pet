@@ -34,11 +34,11 @@ const Icons = {
   alert_triangle: `<svg class="svg-icon" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
   id_card: `<svg class="svg-icon" viewBox="0 0 24 24"><rect width="18" height="14" x="3" y="5" rx="2"/><path d="M7 10h2"/><path d="M7 14h6"/><circle cx="15" cy="10" r="1"/></svg>`,
   chevron_right: `<svg class="svg-icon" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>`,
-  phone: `<svg class="svg-icon-sm" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`,
-  camera: `<svg class="svg-icon-sm" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>`,
+  phone: `<svg class="svg-icon" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`,
+  camera: `<svg class="svg-icon" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>`,
   sun: `<svg class="svg-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`,
   moon: `<svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`,
-  logout: `<svg class="svg-icon-sm" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>`
+  logout: `<svg class="svg-icon" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>`
 };
 
 // DOM Elements
@@ -930,17 +930,17 @@ function renderAlertas() {
 
     <div class="card-section">
       ${(p.alertas && p.alertas.length > 0) ? p.alertas.map(a => `
-        <div class="alert-compact-row ${a.tipo}" onclick="openAlertActionModal('${a.id}')" style="margin-bottom:0.65rem;">
-          <div class="alert-compact-left">
-            <div class="alert-compact-icon">
+        <div class="alert-compact-row ${a.tipo}" onclick="openAlertActionModal('${a.id}')" style="margin-bottom:0.65rem; align-items:flex-start;">
+          <div class="alert-compact-left" style="align-items:flex-start;">
+            <div class="alert-compact-icon" style="margin-top:2px;">
               ${Icons.alert_triangle}
             </div>
-            <div>
-              <div class="alert-compact-title">${escapeHtml(a.titulo)}</div>
-              <div style="font-size:11.5px; color:var(--text-muted); margin-top:2px;">${escapeHtml(a.descripcion)}</div>
+            <div style="min-width:0; flex:1; overflow:hidden;">
+              <div class="alert-compact-title" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(a.titulo)}</div>
+              <div style="font-size:11.5px; color:var(--text-muted); margin-top:2px; word-break:break-word; line-height:1.35;">${escapeHtml(a.descripcion)}</div>
             </div>
           </div>
-          <span class="alert-compact-tag">${escapeHtml(a.estado || 'Activa')}</span>
+          <span class="alert-compact-tag" style="margin-top:2px;">${escapeHtml(a.estado || 'Activa')}</span>
         </div>
       `).join('') : '<p style="color:var(--text-muted); font-size:13px; text-align:center; padding:1rem 0;">Sin alertas registradas.</p>'}
     </div>
