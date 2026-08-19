@@ -5,6 +5,8 @@ let petsList = [];
 let activePetId = 'luna';
 let activePet = null;
 let activeTab = 'dashboard';
+let isEditingTutor = false;
+let isEditingPet = false;
 
 // Search filter state
 let searchQueries = {
@@ -947,7 +949,17 @@ function renderAlertas() {
   `;
 }
 
-// 11. Perfil View (Unified Tutor & Pet Record)
+function toggleEditTutor(enable) {
+  isEditingTutor = enable;
+  renderPerfil();
+}
+
+function toggleEditPet(enable) {
+  isEditingPet = enable;
+  renderPerfil();
+}
+
+// 11. Perfil View (Unified Tutor & Pet Record with View/Edit Modes)
 function renderPerfil() {
   const p = activePet;
   const owner = p.propietario || {};
@@ -966,115 +978,198 @@ function renderPerfil() {
       <span></span>
     </div>
 
-    <!-- Unified Tutor Profile & Account Card -->
-    <div class="card-section" style="border-left: 4px solid var(--secondary);">
+    <!-- 1. Unified Tutor Profile Card (Standard Card Section) -->
+    <div class="card-section">
       <div class="card-section-header">
         <div class="card-section-title">
           <span>👤</span>
-          <span>Datos del Tutor (Titular de la Cuenta)</span>
+          <span>Datos del Tutor</span>
         </div>
+        ${!isEditingTutor ? `
+          <button class="btn-edit-toggle" onclick="toggleEditTutor(true)">
+            ✏️ Editar
+          </button>
+        ` : ''}
       </div>
 
-      <form onsubmit="handleSaveTutorProfile(event)">
-        <div class="form-grid-2">
-          <div class="form-group">
-            <label class="form-label">Nombre Completo</label>
-            <input type="text" class="form-input" id="tNombre" value="${escapeHtml(user.nombre || '')}" required>
+      ${!isEditingTutor ? `
+        <!-- Read-only text mode -->
+        <div class="profile-data-grid">
+          <div class="profile-data-item">
+            <span class="profile-data-label">Nombre del Tutor</span>
+            <span class="profile-data-val">${escapeHtml(user.nombre || 'No registrado')}</span>
           </div>
-          <div class="form-group">
-            <label class="form-label">RUT / Identificación</label>
-            <input type="text" class="form-input" id="tRut" value="${escapeHtml(user.rut || '')}" placeholder="12.345.678-K">
+          <div class="profile-data-item">
+            <span class="profile-data-label">RUT / Identificación</span>
+            <span class="profile-data-val">${escapeHtml(user.rut || 'No registrado')}</span>
           </div>
-        </div>
-
-        <div class="form-grid-2">
-          <div class="form-group">
-            <label class="form-label">Teléfono de Contacto</label>
-            <input type="tel" class="form-input" id="tTelefono" value="${escapeHtml(user.telefono || '')}" placeholder="+56 9 8765 4321">
+          <div class="profile-data-item">
+            <span class="profile-data-label">Teléfono de Contacto</span>
+            <span class="profile-data-val">${escapeHtml(user.telefono || 'No registrado')}</span>
           </div>
-          <div class="form-group">
-            <label class="form-label">Correo Electrónico</label>
-            <input type="email" class="form-input" id="tEmail" value="${escapeHtml(user.email || '')}" disabled style="opacity:0.8; cursor:not-allowed;">
+          <div class="profile-data-item">
+            <span class="profile-data-label">Correo Electrónico</span>
+            <span class="profile-data-val">${escapeHtml(user.email || 'No registrado')}</span>
           </div>
         </div>
-
-        <div class="form-group">
-          <label class="form-label">Dirección Particular / Comuna</label>
-          <input type="text" class="form-input" id="tDireccion" value="${escapeHtml(user.direccion || '')}" placeholder="Av. Providencia 1234, Santiago">
+        <div class="profile-data-item" style="margin-top:0.4rem;">
+          <span class="profile-data-label">Dirección / Comuna</span>
+          <span class="profile-data-val">${escapeHtml(user.direccion || 'No registrada')}</span>
         </div>
+      ` : `
+        <!-- Edit Form Mode -->
+        <form onsubmit="handleSaveTutorProfile(event)">
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Nombre Completo</label>
+              <input type="text" class="form-input" id="tNombre" value="${escapeHtml(user.nombre || '')}" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">RUT / Identificación</label>
+              <input type="text" class="form-input" id="tRut" value="${escapeHtml(user.rut || '')}" placeholder="12.345.678-K">
+            </div>
+          </div>
 
-        <button type="submit" id="saveTutorBtn" class="btn-action-primary" style="width:100%; padding:0.75rem; margin-top:0.25rem;">
-          💾 Guardar Datos del Tutor
-        </button>
-      </form>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Teléfono</label>
+              <input type="tel" class="form-input" id="tTelefono" value="${escapeHtml(user.telefono || '')}" placeholder="+56 9 8765 4321">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Correo Electrónico</label>
+              <input type="email" class="form-input" id="tEmail" value="${escapeHtml(user.email || '')}" disabled style="opacity:0.75; cursor:not-allowed;">
+            </div>
+          </div>
 
-      <button class="btn-logout" onclick="handleLogout()">
-        ${Icons.logout}
-        <span>Cerrar Sesión</span>
-      </button>
+          <div class="form-group">
+            <label class="form-label">Dirección Particular / Comuna</label>
+            <input type="text" class="form-input" id="tDireccion" value="${escapeHtml(user.direccion || '')}" placeholder="Av. Providencia 1234, Santiago">
+          </div>
+
+          <div style="display:flex; gap:0.6rem; margin-top:0.75rem;">
+            <button type="button" class="btn-cancel-edit" onclick="toggleEditTutor(false)">✕ Cancelar</button>
+            <button type="submit" id="saveTutorBtn" class="btn-action-primary" style="flex:1;">💾 Guardar Cambios</button>
+          </div>
+        </form>
+      `}
     </div>
 
-    <!-- Pet Identification Card -->
+    <!-- 2. Pet Identification Card (Standard Card Section) -->
     <div class="card-section">
       <div class="card-section-header">
         <div class="card-section-title">
           <span>🐾</span>
           <span>Ficha de la Mascota</span>
         </div>
+        ${!isEditingPet ? `
+          <button class="btn-edit-toggle" onclick="toggleEditPet(true)">
+            ✏️ Editar
+          </button>
+        ` : ''}
       </div>
 
-      <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.25rem;">
-        <img src="${p.foto || '/static/favicon.svg'}" id="profilePreviewImg" style="width:64px; height:64px; border-radius:50%; object-fit:cover; border:2px solid var(--secondary);" onerror="this.src='/static/favicon.svg'">
+      <div style="display:flex; align-items:center; gap:0.85rem; margin-bottom:1rem;">
+        <img src="${p.foto || '/static/favicon.svg'}" id="profilePreviewImg" style="width:54px; height:54px; border-radius:50%; object-fit:cover; border:2px solid var(--secondary); flex-shrink:0;" onerror="this.src='/static/favicon.svg'">
         <div>
-          <label class="btn-action-primary" style="background:var(--bg-surface); color:var(--text-main); cursor:pointer; font-size:12px; padding:0.4rem 0.8rem; display:inline-flex; align-items:center; gap:4px;">
-            ${Icons.camera} Cambiar Foto
+          <label class="btn-edit-toggle" style="cursor:pointer; display:inline-flex; align-items:center; gap:5px;">
+            ${Icons.camera} <span>Cambiar Foto</span>
             <input type="file" id="petAvatarFile" accept="image/*" style="display:none;" onchange="handleAvatarFileChange(event)">
           </label>
-          <span id="uploadAvatarStatus" style="font-size:11px; color:var(--text-muted); display:block; margin-top:4px;">Formatos: JPG, PNG, WEBP</span>
+          <span id="uploadAvatarStatus" style="font-size:10.5px; color:var(--text-muted); display:block; margin-top:3px;">JPG, PNG o WEBP</span>
         </div>
       </div>
 
-      <form onsubmit="handleSavePetProfile(event)">
-        <div class="form-grid-2">
-          <div class="form-group">
-            <label class="form-label">Nombre</label>
-            <input type="text" class="form-input" id="pNombre" value="${escapeHtml(p.nombre)}" required>
+      ${!isEditingPet ? `
+        <!-- Read-only text mode -->
+        <div class="profile-data-grid">
+          <div class="profile-data-item">
+            <span class="profile-data-label">Nombre</span>
+            <span class="profile-data-val">${escapeHtml(p.nombre || '-')}</span>
           </div>
-          <div class="form-group">
-            <label class="form-label">Especie</label>
-            <input type="text" class="form-input" id="pEspecie" value="${escapeHtml(p.especie)}" required>
+          <div class="profile-data-item">
+            <span class="profile-data-label">Especie</span>
+            <span class="profile-data-val">${escapeHtml(p.especie || '-')}</span>
+          </div>
+          <div class="profile-data-item">
+            <span class="profile-data-label">Raza</span>
+            <span class="profile-data-val">${escapeHtml(p.raza || '-')}</span>
+          </div>
+          <div class="profile-data-item">
+            <span class="profile-data-label">Edad</span>
+            <span class="profile-data-val">${escapeHtml(p.edad || '-')}</span>
+          </div>
+          <div class="profile-data-item">
+            <span class="profile-data-label">Sexo</span>
+            <span class="profile-data-val">${escapeHtml(p.sexo || '-')}</span>
+          </div>
+          <div class="profile-data-item">
+            <span class="profile-data-label">Microchip</span>
+            <span class="profile-data-val">${escapeHtml(p.microchip || 'No registrado')}</span>
+          </div>
+          <div class="profile-data-item">
+            <span class="profile-data-label">Seguro Médico</span>
+            <span class="profile-data-val">${escapeHtml(p.seguro || 'Sin seguro')}</span>
+          </div>
+          <div class="profile-data-item">
+            <span class="profile-data-label">Clínica Frecuente</span>
+            <span class="profile-data-val">${escapeHtml(p.clinica_frecuente || 'Sin clínica')}</span>
           </div>
         </div>
-        <div class="form-grid-2">
-          <div class="form-group">
-            <label class="form-label">Raza</label>
-            <input type="text" class="form-input" id="pRaza" value="${escapeHtml(p.raza || '')}">
+      ` : `
+        <!-- Edit Form Mode -->
+        <form onsubmit="handleSavePetProfile(event)">
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Nombre</label>
+              <input type="text" class="form-input" id="pNombre" value="${escapeHtml(p.nombre)}" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Especie</label>
+              <input type="text" class="form-input" id="pEspecie" value="${escapeHtml(p.especie)}" required>
+            </div>
+          </div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Raza</label>
+              <input type="text" class="form-input" id="pRaza" value="${escapeHtml(p.raza || '')}">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Edad</label>
+              <input type="text" class="form-input" id="pEdad" value="${escapeHtml(p.edad || '')}">
+            </div>
+          </div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Sexo</label>
+              <input type="text" class="form-input" id="pSexo" value="${escapeHtml(p.sexo || '')}">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Microchip</label>
+              <input type="text" class="form-input" id="pMicrochip" value="${escapeHtml(p.microchip || '')}">
+            </div>
           </div>
           <div class="form-group">
-            <label class="form-label">Edad</label>
-            <input type="text" class="form-input" id="pEdad" value="${escapeHtml(p.edad || '')}">
-          </div>
-        </div>
-        <div class="form-grid-2">
-          <div class="form-group">
-            <label class="form-label">Sexo</label>
-            <input type="text" class="form-input" id="pSexo" value="${escapeHtml(p.sexo || '')}">
+            <label class="form-label">Seguro Médico</label>
+            <input type="text" class="form-input" id="pSeguro" value="${escapeHtml(p.seguro || '')}">
           </div>
           <div class="form-group">
-            <label class="form-label">Microchip</label>
-            <input type="text" class="form-input" id="pMicrochip" value="${escapeHtml(p.microchip || '')}">
+            <label class="form-label">Clínica Frecuente</label>
+            <input type="text" class="form-input" id="pClinica" value="${escapeHtml(p.clinica_frecuente || '')}">
           </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Seguro Médico</label>
-          <input type="text" class="form-input" id="pSeguro" value="${escapeHtml(p.seguro || '')}">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Clínica Frecuente</label>
-          <input type="text" class="form-input" id="pClinica" value="${escapeHtml(p.clinica_frecuente || '')}">
-        </div>
-        <button type="submit" class="btn-action-primary" style="width:100%; padding:0.75rem;">Guardar Cambios Mascota</button>
-      </form>
+          <div style="display:flex; gap:0.6rem; margin-top:0.75rem;">
+            <button type="button" class="btn-cancel-edit" onclick="toggleEditPet(false)">✕ Cancelar</button>
+            <button type="submit" class="btn-action-primary" style="flex:1;">💾 Guardar Mascota</button>
+          </div>
+        </form>
+      `}
+    </div>
+
+    <!-- 3. Logout Action Button -->
+    <div>
+      <button class="btn-logout" onclick="handleLogout()">
+        ${Icons.logout}
+        <span>Cerrar Sesión</span>
+      </button>
     </div>
   `;
 }
@@ -1929,6 +2024,7 @@ async function handleSavePetProfile(e) {
       body: JSON.stringify(payload)
     });
     if (res.ok) {
+      isEditingPet = false;
       showToast('¡Ficha médica actualizada!', 'success');
       await loadPets();
       await loadActivePet(activePetId);
@@ -1983,6 +2079,7 @@ async function handleSaveTutorProfile(e) {
     });
 
     if (resPet.ok) {
+      isEditingTutor = false;
       showToast('¡Datos del tutor actualizados con éxito!', 'success');
       await loadActivePet(activePetId);
     } else {
