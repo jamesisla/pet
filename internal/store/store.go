@@ -67,7 +67,12 @@ func (s *PetStore) saveUnsafe() error {
 		return err
 	}
 
-	return os.WriteFile(s.filePath, data, 0644)
+	tmpFile := s.filePath + ".tmp"
+	if err := os.WriteFile(tmpFile, data, 0644); err != nil {
+		return err
+	}
+
+	return os.Rename(tmpFile, s.filePath)
 }
 
 // GetAllSummary returns a list of summary cards for all pets
