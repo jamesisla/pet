@@ -1,0 +1,4 @@
+# Caddyfile para Sania Pet (HTTPS Automático)
+pet.oci.lat {
+    reverse_proxy 127.0.0.1:3000
+}

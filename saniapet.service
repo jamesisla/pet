@@ -1,0 +1,18 @@
+[Unit]
+Description=Sania Pet — Ficha Medica Veterinaria (Go Monolith)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/saniv2
+ExecStart=/opt/saniv2/saniapet
+Restart=always
+RestartSec=3
+Environment=PORT=3000
+Environment=APP_ENV=production
+Environment=APP_NAME=Sania Pet — Ficha Medica Veterinaria
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target

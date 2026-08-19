@@ -1,0 +1,30 @@
+# Binaries and compiled output
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+/app
+/saniapet
+
+# Environment configuration
+.env
+.env.local
+.env.*.local
+
+# IDEs & System files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*~
+
+# Data folder contents (keeps structure via .gitkeep)
+data/*
+!data/.gitkeep
+
+# Uploads folder contents (keeps structure via .gitkeep)
+web/static/uploads/*
+!web/static/uploads/.gitkeep

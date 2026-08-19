@@ -1,0 +1,13 @@
+#!/sbin/openrc-run
+
+name="saniapet"
+description="Sania Pet — Ficha Medica Veterinaria (Go Monolith)"
+command="/opt/saniv2/saniapet"
+command_background="true"
+pidfile="/run/${RC_SVCNAME}.pid"
+directory="/opt/saniv2"
+
+depend() {
+    need net
+    after firewall
+}
