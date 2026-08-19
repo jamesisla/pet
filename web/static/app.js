@@ -13,6 +13,28 @@ let searchQueries = {
   diario: ''
 };
 
+// ----------------------------------------------------
+// Vector SVG Icon Definitions (High-End Vector Graphics)
+// ----------------------------------------------------
+const Icons = {
+  home: `<svg class="svg-icon" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
+  stethoscope: `<svg class="svg-icon" viewBox="0 0 24 24"><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"/><circle cx="20" cy="10" r="2"/></svg>`,
+  shield_check: `<svg class="svg-icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>`,
+  syringe: `<svg class="svg-icon" viewBox="0 0 24 24"><path d="m18 2 4 4"/><path d="m17 7 3-3"/><path d="M19 9 8.7 19.3c-.4.4-1 .6-1.6.6H3v-4.1c0-.6.2-1.2.6-1.6L13.9 4"/><path d="m18 11-4-4"/><path d="m5 19-3 3"/><path d="m14 4 6 6"/></svg>`,
+  bug: `<svg class="svg-icon" viewBox="0 0 24 24"><path d="m8 2 1.88 1.88"/><path d="M14.12 3.88 16 2"/><path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1"/><path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6"/><path d="M12 20v-9"/><path d="M6.53 9C4.6 8.8 3 7.1 3 5"/><path d="M6 13H2"/><path d="M3 21c0-2.1 1.7-3.9 3.8-4"/><path d="M20.97 5c0 2.1-1.6 3.8-3.5 4"/><path d="M22 13h-4"/><path d="M17.2 17c2.1.1 3.8 1.9 3.8 4"/></svg>`,
+  pill: `<svg class="svg-icon" viewBox="0 0 24 24"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><line x1="8.5" y1="8.5" x2="15.5" y2="15.5"/></svg>`,
+  flask: `<svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2"/><path d="M8.5 2h7"/><path d="M7 16h10"/></svg>`,
+  image: `<svg class="svg-icon" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>`,
+  clipboard: `<svg class="svg-icon" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M15 2H9a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1Z"/><path d="M8 14h2l2-3 2 6 1.5-3H16"/></svg>`,
+  scale: `<svg class="svg-icon" viewBox="0 0 24 24"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>`,
+  bell: `<svg class="svg-icon" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>`,
+  user: `<svg class="svg-icon" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+  alert_triangle: `<svg class="svg-icon" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
+  id_card: `<svg class="svg-icon" viewBox="0 0 24 24"><rect width="18" height="14" x="3" y="5" rx="2"/><path d="M7 10h2"/><path d="M7 14h6"/><circle cx="15" cy="10" r="1"/></svg>`,
+  chevron_right: `<svg class="svg-icon" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>`,
+  phone: `<svg class="svg-icon-sm" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`
+};
+
 // DOM Elements
 const headerPetAvatar = document.getElementById('headerPetAvatar');
 const headerPetName = document.getElementById('headerPetName');
@@ -83,7 +105,6 @@ function showConfirmDialog({ title, message, confirmText = 'Eliminar', onConfirm
 function getRelativeTimeBadge(dateStr) {
   if (!dateStr || dateStr === 'N/A') return '';
   
-  // Format expectation: DD/MM/YYYY
   const parts = dateStr.split('/');
   if (parts.length !== 3) return `<span class="expiry-pill expiry-green">${escapeHtml(dateStr)}</span>`;
 
@@ -271,7 +292,7 @@ function renderCurrentView() {
   }
 }
 
-// 1. Dashboard View
+// 1. Dashboard View (Exact 1.png Layout with Premium SVG Icons)
 function renderDashboard() {
   const p = activePet;
   const activeAlerts = (p.alertas || []).filter(a => !a.estado || a.estado === 'activa');
@@ -284,7 +305,7 @@ function renderDashboard() {
           <div class="alert-compact-row ${a.tipo}" onclick="openAlertActionModal('${a.id}')" title="Clic para gestionar alerta">
             <div class="alert-compact-left">
               <div class="alert-compact-icon">
-                <span>${a.tipo === 'critica' ? '⚠️' : '🔔'}</span>
+                ${Icons.alert_triangle}
               </div>
               <span class="alert-compact-title">${escapeHtml(a.titulo)}</span>
             </div>
@@ -299,8 +320,12 @@ function renderDashboard() {
       <div class="ficha-top-row">
         <span class="ficha-badge">Ficha Médica</span>
         <div class="ficha-top-actions">
-          <button class="ficha-action-btn" onclick="openDigitalPassportModal()" title="Carnet Digital / Código QR">🪪</button>
-          <button class="ficha-action-btn" onclick="switchTab('perfil')" title="Ver Perfil Completo">›</button>
+          <button class="ficha-action-btn" onclick="openDigitalPassportModal()" title="Carnet Digital de Emergencia">
+            ${Icons.id_card}
+          </button>
+          <button class="ficha-action-btn" onclick="switchTab('perfil')" title="Ver Perfil Completo">
+            ${Icons.chevron_right}
+          </button>
         </div>
       </div>
 
@@ -322,8 +347,8 @@ function renderDashboard() {
         </div>
         <div>
           <div class="ficha-field-label">Clínica Frecuente</div>
-          <a href="tel:+56912345678" class="ficha-field-val clickable" title="Llamar a la clínica">
-            📞 ${escapeHtml(p.clinica_frecuente || 'Hospital Veterinario...')}
+          <a href="tel:+56912345678" class="ficha-field-val clickable" title="Llamar a la clínica" style="display:flex; align-items:center; gap:4px;">
+            ${Icons.phone} <span>${escapeHtml(p.clinica_frecuente || 'Hospital Veterinario...')}</span>
           </a>
         </div>
       </div>
@@ -335,46 +360,58 @@ function renderDashboard() {
       <h2 class="section-title">Historial Médico</h2>
     </div>
 
-    <!-- 2x2 Feature Menu Grid (Matching 1.png) -->
+    <!-- 2x2 Feature Menu Grid (Matching 1.png with Vector SVGs) -->
     <div class="features-grid-2x2">
       <!-- Consultas -->
       <div class="feature-menu-card" onclick="switchTab('consultas')">
-        <div class="feature-icon-squircle feature-icon-blue">🩺</div>
+        <div class="feature-icon-squircle feature-icon-blue">
+          ${Icons.stethoscope}
+        </div>
         <div class="feature-card-name">Consultas</div>
         <div class="feature-card-desc">Historial clínico</div>
       </div>
 
       <!-- Vacunas -->
       <div class="feature-menu-card" onclick="switchTab('vacunas')">
-        <div class="feature-icon-squircle feature-icon-green">🛡️</div>
+        <div class="feature-icon-squircle feature-icon-green">
+          ${Icons.shield_check}
+        </div>
         <div class="feature-card-name">Vacunas</div>
         <div class="feature-card-desc">Próximas y aplicadas</div>
       </div>
 
       <!-- Desparasitaciones -->
       <div class="feature-menu-card" onclick="switchTab('desparasitaciones')">
-        <div class="feature-icon-squircle feature-icon-orange">🪲</div>
+        <div class="feature-icon-squircle feature-icon-orange">
+          ${Icons.bug}
+        </div>
         <div class="feature-card-name">Desparasitaciones</div>
         <div class="feature-card-desc">Control interno y externo</div>
       </div>
 
       <!-- Tratamientos / Medicamentos -->
       <div class="feature-menu-card" onclick="switchTab('medicamentos')">
-        <div class="feature-icon-squircle feature-icon-purple">💊</div>
+        <div class="feature-icon-squircle feature-icon-purple">
+          ${Icons.pill}
+        </div>
         <div class="feature-card-name">Tratamientos</div>
         <div class="feature-card-desc">Prescripción o suplemento</div>
       </div>
 
       <!-- Laboratorios -->
       <div class="feature-menu-card" onclick="switchTab('laboratorios')">
-        <div class="feature-icon-squircle feature-icon-pink">🧪</div>
+        <div class="feature-icon-squircle feature-icon-pink">
+          ${Icons.flask}
+        </div>
         <div class="feature-card-name">Laboratorios</div>
         <div class="feature-card-desc">Exámenes y análisis</div>
       </div>
 
       <!-- Imágenes Médicas -->
       <div class="feature-menu-card" onclick="switchTab('imagenes')">
-        <div class="feature-icon-squircle feature-icon-teal">🩻</div>
+        <div class="feature-icon-squircle feature-icon-teal">
+          ${Icons.image}
+        </div>
         <div class="feature-card-name">Imágenes</div>
         <div class="feature-card-desc">Ecografías y rayos X</div>
       </div>
@@ -393,7 +430,7 @@ function renderConsultas() {
   mainContent.innerHTML = `
     <div class="subview-nav-header">
       <button class="btn-back-link" onclick="switchTab('dashboard')">‹ Volver al Inicio</button>
-      <span class="subview-title">🩺 Consultas</span>
+      <span class="subview-title">Consultas</span>
       <button class="btn-action-primary" onclick="openAddRecordModal('diagnostico')">+ Registrar</button>
     </div>
 
@@ -433,7 +470,7 @@ function renderVacunas() {
   mainContent.innerHTML = `
     <div class="subview-nav-header">
       <button class="btn-back-link" onclick="switchTab('dashboard')">‹ Volver al Inicio</button>
-      <span class="subview-title">🛡️ Vacunas</span>
+      <span class="subview-title">Vacunas</span>
       <button class="btn-action-primary" onclick="openAddRecordModal('vacuna')">+ Registrar</button>
     </div>
 
@@ -469,7 +506,7 @@ function renderDesparasitaciones() {
   mainContent.innerHTML = `
     <div class="subview-nav-header">
       <button class="btn-back-link" onclick="switchTab('dashboard')">‹ Volver al Inicio</button>
-      <span class="subview-title">🪲 Desparasitaciones</span>
+      <span class="subview-title">Desparasitaciones</span>
       <button class="btn-action-primary" onclick="openAddRecordModal('desparasitacion')">+ Registrar</button>
     </div>
 
@@ -500,7 +537,7 @@ function renderMedicamentos() {
   mainContent.innerHTML = `
     <div class="subview-nav-header">
       <button class="btn-back-link" onclick="switchTab('dashboard')">‹ Volver al Inicio</button>
-      <span class="subview-title">💊 Tratamientos</span>
+      <span class="subview-title">Tratamientos</span>
       <button class="btn-action-primary" onclick="openAddRecordModal('medicamento')">+ Registrar</button>
     </div>
 
@@ -530,7 +567,7 @@ function renderLaboratorios() {
   mainContent.innerHTML = `
     <div class="subview-nav-header">
       <button class="btn-back-link" onclick="switchTab('dashboard')">‹ Volver al Inicio</button>
-      <span class="subview-title">🧪 Laboratorios</span>
+      <span class="subview-title">Laboratorios</span>
       <button class="btn-action-primary" onclick="openAddRecordModal('laboratorio')">+ Registrar</button>
     </div>
 
@@ -557,7 +594,7 @@ function renderImagenes() {
   mainContent.innerHTML = `
     <div class="subview-nav-header">
       <button class="btn-back-link" onclick="switchTab('dashboard')">‹ Volver al Inicio</button>
-      <span class="subview-title">🩻 Imágenes</span>
+      <span class="subview-title">Imágenes</span>
       <button class="btn-action-primary" onclick="openAddRecordModal('imagen')">+ Registrar</button>
     </div>
 
@@ -590,7 +627,7 @@ function renderDiario() {
   mainContent.innerHTML = `
     <div class="subview-nav-header">
       <button class="btn-back-link" onclick="switchTab('dashboard')">‹ Volver al Inicio</button>
-      <span class="subview-title">📋 Diario de Salud</span>
+      <span class="subview-title">Diario de Salud</span>
       <button class="btn-action-primary" onclick="openAddRecordModal('sintoma')">+ Registrar</button>
     </div>
 
@@ -623,7 +660,7 @@ function renderPeso() {
   mainContent.innerHTML = `
     <div class="subview-nav-header">
       <button class="btn-back-link" onclick="switchTab('dashboard')">‹ Volver al Inicio</button>
-      <span class="subview-title">⚖️ Control de Peso</span>
+      <span class="subview-title">Control de Peso</span>
       <button class="btn-action-primary" onclick="openAddRecordModal('peso')">+ Registrar</button>
     </div>
 
@@ -651,7 +688,7 @@ function renderAlertas() {
   mainContent.innerHTML = `
     <div class="subview-nav-header">
       <button class="btn-back-link" onclick="switchTab('dashboard')">‹ Volver al Inicio</button>
-      <span class="subview-title">🔔 Alertas</span>
+      <span class="subview-title">Alertas</span>
       <button class="btn-action-primary" onclick="openAddRecordModal('alerta')">+ Nueva</button>
     </div>
 
@@ -660,7 +697,7 @@ function renderAlertas() {
         <div class="alert-compact-row ${a.tipo}" onclick="openAlertActionModal('${a.id}')" style="margin-bottom:0.65rem;">
           <div class="alert-compact-left">
             <div class="alert-compact-icon">
-              <span>${a.tipo === 'critica' ? '⚠️' : '🔔'}</span>
+              ${Icons.alert_triangle}
             </div>
             <div>
               <div class="alert-compact-title">${escapeHtml(a.titulo)}</div>
@@ -681,7 +718,7 @@ function renderPerfil() {
   mainContent.innerHTML = `
     <div class="subview-nav-header">
       <button class="btn-back-link" onclick="switchTab('dashboard')">‹ Volver al Inicio</button>
-      <span class="subview-title">👤 Perfil & Tutor</span>
+      <span class="subview-title">Perfil & Tutor</span>
       <span></span>
     </div>
 
@@ -772,7 +809,7 @@ function handleSearchFilter(key, query) {
 }
 
 // ----------------------------------------------------
-// Modals & Bottom Sheets (Matching 2.png)
+// Modals & Bottom Sheets (Matching 2.png with Vector SVGs)
 // ----------------------------------------------------
 
 function closeModal() {
@@ -784,7 +821,7 @@ modalBackdrop.addEventListener('click', (e) => {
   if (e.target === modalBackdrop) closeModal();
 });
 
-// Bottom Sheet Option Menu (Exact 2.png)
+// Bottom Sheet Option Menu (Exact 2.png with Crisp SVGs)
 function openBottomSheetMenu() {
   modalCard.innerHTML = `
     <div class="sheet-drag-handle"></div>
@@ -794,7 +831,9 @@ function openBottomSheetMenu() {
     <div class="sheet-options-list">
       <!-- 1. Sintoma -->
       <button class="sheet-option-row" onclick="openAddRecordModal('sintoma')">
-        <div class="sheet-option-icon" style="background:#eff6ff; color:#2563eb;">📋</div>
+        <div class="sheet-option-icon" style="background:#eff6ff; color:#2563eb;">
+          ${Icons.clipboard}
+        </div>
         <div class="sheet-option-text">
           <span class="sheet-option-title">Registrar Síntoma</span>
           <span class="sheet-option-sub">Anotar observaciones cotidianas</span>
@@ -803,7 +842,9 @@ function openBottomSheetMenu() {
 
       <!-- 2. Peso -->
       <button class="sheet-option-row" onclick="openAddRecordModal('peso')">
-        <div class="sheet-option-icon" style="background:#fff7ed; color:#ea580c;">⚖️</div>
+        <div class="sheet-option-icon" style="background:#fff7ed; color:#ea580c;">
+          ${Icons.scale}
+        </div>
         <div class="sheet-option-text">
           <span class="sheet-option-title">Registrar Peso</span>
           <span class="sheet-option-sub">Controlar peso y crecimiento</span>
@@ -812,7 +853,9 @@ function openBottomSheetMenu() {
 
       <!-- 3. Vacuna -->
       <button class="sheet-option-row" onclick="openAddRecordModal('vacuna')">
-        <div class="sheet-option-icon" style="background:#ecfdf5; color:#10b981;">💉</div>
+        <div class="sheet-option-icon" style="background:#ecfdf5; color:#059669;">
+          ${Icons.syringe}
+        </div>
         <div class="sheet-option-text">
           <span class="sheet-option-title">Registrar Vacuna</span>
           <span class="sheet-option-sub">Historial de inmunizaciones</span>
@@ -821,7 +864,9 @@ function openBottomSheetMenu() {
 
       <!-- 4. Recordatorio -->
       <button class="sheet-option-row" onclick="openAddRecordModal('alerta')">
-        <div class="sheet-option-icon" style="background:#eef2ff; color:#6366f1;">🔔</div>
+        <div class="sheet-option-icon" style="background:#eef2ff; color:#6366f1;">
+          ${Icons.bell}
+        </div>
         <div class="sheet-option-text">
           <span class="sheet-option-title">Agendar Recordatorio</span>
           <span class="sheet-option-sub">Alertas y citas próximas</span>
@@ -830,7 +875,9 @@ function openBottomSheetMenu() {
 
       <!-- 5. Tratamiento -->
       <button class="sheet-option-row" onclick="openAddRecordModal('medicamento')">
-        <div class="sheet-option-icon" style="background:#faf5ff; color:#9333ea;">💊</div>
+        <div class="sheet-option-icon" style="background:#faf5ff; color:#9333ea;">
+          ${Icons.pill}
+        </div>
         <div class="sheet-option-text">
           <span class="sheet-option-title">Registrar Tratamiento</span>
           <span class="sheet-option-sub">Prescripción o suplemento</span>
@@ -839,7 +886,9 @@ function openBottomSheetMenu() {
 
       <!-- 6. Consulta -->
       <button class="sheet-option-row" onclick="openAddRecordModal('diagnostico')">
-        <div class="sheet-option-icon" style="background:#f0fdfa; color:#0d9488;">🩺</div>
+        <div class="sheet-option-icon" style="background:#f0fdfa; color:#0d9488;">
+          ${Icons.stethoscope}
+        </div>
         <div class="sheet-option-text">
           <span class="sheet-option-title">Registrar Consulta</span>
           <span class="sheet-option-sub">Historial y diagnóstico clínico</span>
@@ -848,7 +897,9 @@ function openBottomSheetMenu() {
 
       <!-- 7. Desparasitacion -->
       <button class="sheet-option-row" onclick="openAddRecordModal('desparasitacion')">
-        <div class="sheet-option-icon" style="background:#fffbeb; color:#d97706;">🪱</div>
+        <div class="sheet-option-icon" style="background:#fffbeb; color:#d97706;">
+          ${Icons.bug}
+        </div>
         <div class="sheet-option-text">
           <span class="sheet-option-title">Registrar Desparasitación</span>
           <span class="sheet-option-sub">Control interno o externo</span>
@@ -857,7 +908,9 @@ function openBottomSheetMenu() {
 
       <!-- 8. Laboratorio -->
       <button class="sheet-option-row" onclick="openAddRecordModal('laboratorio')">
-        <div class="sheet-option-icon" style="background:#fdf2f8; color:#db2777;">🧪</div>
+        <div class="sheet-option-icon" style="background:#fdf2f8; color:#db2777;">
+          ${Icons.flask}
+        </div>
         <div class="sheet-option-text">
           <span class="sheet-option-title">Registrar Laboratorio</span>
           <span class="sheet-option-sub">Exámenes y análisis clínicos</span>
@@ -866,7 +919,9 @@ function openBottomSheetMenu() {
 
       <!-- 9. Imagen -->
       <button class="sheet-option-row" onclick="openAddRecordModal('imagen')">
-        <div class="sheet-option-icon" style="background:#ecfeff; color:#0891b2;">🩻</div>
+        <div class="sheet-option-icon" style="background:#ecfeff; color:#0891b2;">
+          ${Icons.image}
+        </div>
         <div class="sheet-option-text">
           <span class="sheet-option-title">Registrar Imagen</span>
           <span class="sheet-option-sub">Ecografías y radiografías</span>
@@ -1216,7 +1271,7 @@ function deleteRecord(type, id) {
   });
 }
 
-// Digital Passport / Emergency QR Code Modal (UX Feature)
+// Digital Passport / Emergency QR Code Modal
 function openDigitalPassportModal() {
   const p = activePet;
   const owner = p.propietario || {};
@@ -1363,7 +1418,9 @@ function openAlertActionModal(alertId) {
     <div class="sheet-drag-handle"></div>
     <button class="sheet-close-btn" onclick="closeModal()">✕</button>
     <div style="text-align:center; margin-bottom:1rem;">
-      <span style="font-size:32px;">⚠️</span>
+      <div style="width:48px; height:48px; border-radius:14px; background:#fef2f2; color:#ef4444; display:flex; align-items:center; justify-content:center; margin:0 auto 0.5rem;">
+        ${Icons.alert_triangle}
+      </div>
       <h3 style="font-size:17px; font-weight:900; color:#991b1b; margin-top:0.25rem;">${escapeHtml(alertItem.titulo)}</h3>
       <p style="font-size:13px; color:var(--text-muted); margin-top:0.35rem;">${escapeHtml(alertItem.descripcion)}</p>
     </div>

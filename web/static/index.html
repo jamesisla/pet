@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Sania Pet — Ficha Médica Veterinaria</title>
   <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
-  <link rel="stylesheet" href="/static/style.css?v=3.2">
+  <link rel="stylesheet" href="/static/style.css?v=3.5">
 </head>
 <body>
 
@@ -18,67 +18,68 @@
           <span class="header-pet-label">MASCOTA ACTIVA</span>
           <span class="header-pet-name">
             <span id="headerPetName">Luna (Perro)</span>
-            <span class="dropdown-arrow">⌵</span>
+            <svg class="svg-icon-sm dropdown-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
           </span>
         </div>
       </button>
 
       <div class="header-actions">
         <button class="btn-new-pet" id="headerNewPetBtn" onclick="openAddPetModal()">
-          <span>+ Nueva</span>
+          <svg class="svg-icon-sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <span>Nueva</span>
         </button>
         <button class="btn-icon-round" id="settingsBtn" title="Configuración / Tema" onclick="toggleTheme()">
-          ⚙️
+          <svg class="svg-icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         </button>
       </div>
     </header>
 
-    <!-- App Content Body (Sidebar on Desktop, Full view on Mobile) -->
+    <!-- App Content Body -->
     <div class="app-content-body">
       <!-- Desktop Sidebar -->
       <aside class="desktop-sidebar">
         <button class="sidebar-link active" data-tab="dashboard" onclick="switchTab('dashboard')">
-          <span>🏠</span>
-          <span>Inicio / Resumen</span>
+          <svg class="svg-icon-sm" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          <span>Inicio</span>
         </button>
         <button class="sidebar-link" data-tab="consultas" onclick="switchTab('consultas')">
-          <span>🩺</span>
+          <svg class="svg-icon-sm" viewBox="0 0 24 24"><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"/><circle cx="20" cy="10" r="2"/></svg>
           <span>Consultas</span>
         </button>
         <button class="sidebar-link" data-tab="vacunas" onclick="switchTab('vacunas')">
-          <span>🛡️</span>
+          <svg class="svg-icon-sm" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
           <span>Vacunas</span>
         </button>
         <button class="sidebar-link" data-tab="desparasitaciones" onclick="switchTab('desparasitaciones')">
-          <span>🪲</span>
+          <svg class="svg-icon-sm" viewBox="0 0 24 24"><path d="m8 2 1.88 1.88"/><path d="M14.12 3.88 16 2"/><path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1"/><path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6"/><path d="M12 20v-9"/><path d="M6.53 9C4.6 8.8 3 7.1 3 5"/><path d="M6 13H2"/><path d="M3 21c0-2.1 1.7-3.9 3.8-4"/><path d="M20.97 5c0 2.1-1.6 3.8-3.5 4"/><path d="M22 13h-4"/><path d="M17.2 17c2.1.1 3.8 1.9 3.8 4"/></svg>
           <span>Desparasitaciones</span>
         </button>
         <button class="sidebar-link" data-tab="medicamentos" onclick="switchTab('medicamentos')">
-          <span>💊</span>
+          <svg class="svg-icon-sm" viewBox="0 0 24 24"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><line x1="8.5" y1="8.5" x2="15.5" y2="15.5"/></svg>
           <span>Tratamientos</span>
         </button>
         <button class="sidebar-link" data-tab="laboratorios" onclick="switchTab('laboratorios')">
-          <span>🧪</span>
+          <svg class="svg-icon-sm" viewBox="0 0 24 24"><path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2"/><path d="M8.5 2h7"/><path d="M7 16h10"/></svg>
           <span>Laboratorios</span>
         </button>
         <button class="sidebar-link" data-tab="imagenes" onclick="switchTab('imagenes')">
-          <span>🩻</span>
-          <span>Imágenes Médicas</span>
+          <svg class="svg-icon-sm" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+          <span>Imágenes</span>
         </button>
         <button class="sidebar-link" data-tab="diario" onclick="switchTab('diario')">
-          <span>📋</span>
-          <span>Diario de Salud</span>
+          <svg class="svg-icon-sm" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M15 2H9a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1Z"/><path d="M8 14h2l2-3 2 6 1.5-3H16"/></svg>
+          <span>Diario</span>
         </button>
         <button class="sidebar-link" data-tab="peso" onclick="switchTab('peso')">
-          <span>⚖️</span>
+          <svg class="svg-icon-sm" viewBox="0 0 24 24"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>
           <span>Control de Peso</span>
         </button>
         <button class="sidebar-link" data-tab="alertas" onclick="switchTab('alertas')">
-          <span>🔔</span>
-          <span>Alertas Activas</span>
+          <svg class="svg-icon-sm" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+          <span>Alertas</span>
         </button>
         <button class="sidebar-link" data-tab="perfil" onclick="switchTab('perfil')">
-          <span>👤</span>
+          <svg class="svg-icon-sm" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           <span>Perfil Mascota</span>
         </button>
       </aside>
@@ -89,44 +90,46 @@
       </main>
     </div>
 
-    <!-- Mobile Bottom Navigation Bar (5 slots with blue + replacing vacunas in the exact center) -->
+    <!-- Mobile Bottom Navigation Bar (5 slots with SVG icons and blue + in center) -->
     <nav class="mobile-bottom-bar">
       <button class="bar-tab-btn active" data-tab="dashboard" onclick="switchTab('dashboard')">
-        <span class="tab-icon">🏠</span>
+        <svg class="svg-icon" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         <span>Inicio</span>
       </button>
       <button class="bar-tab-btn" data-tab="consultas" onclick="switchTab('consultas')">
-        <span class="tab-icon">🩺</span>
+        <svg class="svg-icon" viewBox="0 0 24 24"><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"/><circle cx="20" cy="10" r="2"/></svg>
         <span>Consultas</span>
       </button>
       
       <!-- Smart Center Blue Action Button (In place of Vacunas) -->
       <div class="center-fab-slot">
-        <button class="center-fab-btn" id="centerFabBtn" onclick="handleSmartActionClick()" title="Agregar">+</button>
+        <button class="center-fab-btn" id="centerFabBtn" onclick="handleSmartActionClick()" title="Agregar">
+          <svg style="width:26px; height:26px; stroke:#ffffff; stroke-width:3; stroke-linecap:round; fill:none;" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
       </div>
 
       <button class="bar-tab-btn" data-tab="alertas" onclick="switchTab('alertas')">
-        <span class="tab-icon">🔔</span>
+        <svg class="svg-icon" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
         <span class="bar-alert-counter" id="bottomAlertBadge" style="display:none;">0</span>
         <span>Alertas</span>
       </button>
       <button class="bar-tab-btn" data-tab="perfil" onclick="switchTab('perfil')">
-        <span class="tab-icon">👤</span>
+        <svg class="svg-icon" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         <span>Perfil</span>
       </button>
     </nav>
   </div>
 
-  <!-- Toast Notification Container (Non-blocking alerts) -->
+  <!-- Toast Notification Container -->
   <div id="toastContainer" class="toast-container"></div>
 
-  <!-- Bottom Sheet / Modal Container (Matching 2.png) -->
+  <!-- Bottom Sheet / Modal Container -->
   <div id="modalBackdrop" class="bottom-sheet-backdrop" style="display: none;">
     <div class="bottom-sheet-card" id="modalCard">
       <!-- Dynamically injected by app.js -->
     </div>
   </div>
 
-  <script src="/static/app.js?v=3.3"></script>
+  <script src="/static/app.js?v=3.5"></script>
 </body>
 </html>
