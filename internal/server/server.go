@@ -81,6 +81,11 @@ func Run() {
 		log.Fatalf("Error al inicializar el store: %v", err)
 	}
 
+	userStore, err := store.NewUserStore(dataDir)
+	if err != nil {
+		log.Fatalf("Error al inicializar el store de usuarios: %v", err)
+	}
+
 	app := fiber.New(fiber.Config{
 		AppName:      cfg.AppName,
 		ServerHeader: "SaniaPet-Go-Monolith",
@@ -122,12 +127,19 @@ func Run() {
 
 	// Handlers
 	healthHandler := handler.NewHealthHandler(cfg.AppName, "2.0.0")
+	authHandler := handler.NewAuthHandler(userStore)
 	petHandler := handler.NewPetHandler(st, baseDir)
 
 	// API Group
 	api := app.Group("/api")
 	api.Get("/health", healthHandler.Health)
 	api.Post("/upload", petHandler.UploadFile)
+
+	// Auth Endpoints
+	api.Post("/auth/register", authHandler.Register)
+	api.Post("/auth/login", authHandler.Login)
+	api.Get("/auth/me", authHandler.Me)
+	api.Post("/auth/logout", authHandler.Logout)
 
 	// Pets & Clinical Records API
 	api.Get("/pets", petHandler.ListPets)

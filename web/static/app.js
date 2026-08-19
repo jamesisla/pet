@@ -1,4 +1,6 @@
 // State Management
+let currentUser = null;
+let authToken = localStorage.getItem('sania_auth_token');
 let petsList = [];
 let activePetId = 'luna';
 let activePet = null;
@@ -35,7 +37,8 @@ const Icons = {
   phone: `<svg class="svg-icon-sm" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`,
   camera: `<svg class="svg-icon-sm" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>`,
   sun: `<svg class="svg-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`,
-  moon: `<svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`
+  moon: `<svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`,
+  logout: `<svg class="svg-icon-sm" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>`
 };
 
 // DOM Elements
@@ -46,6 +49,211 @@ const bottomAlertBadge = document.getElementById('bottomAlertBadge');
 const modalBackdrop = document.getElementById('modalBackdrop');
 const modalCard = document.getElementById('modalCard');
 const toastContainer = document.getElementById('toastContainer');
+const authOverlay = document.getElementById('authOverlay');
+
+// ----------------------------------------------------
+// Authentication System (Login & Register)
+// ----------------------------------------------------
+
+async function checkAuthAndBoot() {
+  if (authToken) {
+    try {
+      const res = await fetch('/api/auth/me', {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      });
+      if (res.ok) {
+        currentUser = await res.json();
+        authOverlay.style.display = 'none';
+        await loadPets();
+        return;
+      }
+    } catch (err) {
+      console.warn('Auth check failed:', err);
+    }
+  }
+
+  // No token or invalid -> Show Login Screen
+  renderAuthScreen('login');
+}
+
+function renderAuthScreen(mode = 'login') {
+  authOverlay.style.display = 'flex';
+  authOverlay.innerHTML = `
+    <div class="auth-card">
+      <div class="auth-header">
+        <img src="/static/favicon.svg" alt="Sania Pet" class="auth-logo">
+        <h2 class="auth-title">Sania Pet</h2>
+        <p class="auth-subtitle">Ficha Médica Veterinaria Inteligente</p>
+      </div>
+
+      <div class="auth-tabs">
+        <button class="auth-tab-btn ${mode === 'login' ? 'active' : ''}" onclick="renderAuthScreen('login')">
+          Iniciar Sesión
+        </button>
+        <button class="auth-tab-btn ${mode === 'register' ? 'active' : ''}" onclick="renderAuthScreen('register')">
+          Registrarme
+        </button>
+      </div>
+
+      ${mode === 'login' ? `
+        <!-- Formulario de Login -->
+        <form onsubmit="handleLoginSubmit(event)">
+          <div class="form-group">
+            <label class="form-label">Correo Electrónico</label>
+            <input type="email" class="form-input" id="authEmail" placeholder="ejemplo@correo.cl" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Contraseña</label>
+            <input type="password" class="form-input" id="authPassword" placeholder="••••••••" required>
+          </div>
+          <button type="submit" id="authSubmitBtn" class="btn-action-primary" style="width:100%; padding:0.8rem; margin-top:0.5rem;">
+            Ingresar a mi Ficha
+          </button>
+        </form>
+
+        <div class="demo-account-box">
+          <strong>💡 Acceso de Demostración Rápido</strong>
+          <div>Usuario: <code>demo@saniapet.cl</code> • Clave: <code>demo123</code></div>
+          <button class="btn-demo-fill" onclick="fillDemoCredentials()">Autocompletar Demo</button>
+        </div>
+      ` : `
+        <!-- Formulario de Registro -->
+        <form onsubmit="handleRegisterSubmit(event)">
+          <div class="form-group">
+            <label class="form-label">Nombre del Tutor</label>
+            <input type="text" class="form-input" id="regNombre" placeholder="Tu nombre completo" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Correo Electrónico</label>
+            <input type="email" class="form-input" id="regEmail" placeholder="tucorreo@dominio.cl" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Teléfono de Contacto</label>
+            <input type="tel" class="form-input" id="regTelefono" placeholder="+56 9 1234 5678">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Contraseña</label>
+            <input type="password" class="form-input" id="regPassword" placeholder="Mínimo 4 caracteres" required>
+          </div>
+          <button type="submit" id="regSubmitBtn" class="btn-action-primary" style="width:100%; padding:0.8rem; margin-top:0.5rem;">
+            Crear mi Cuenta Gratuita
+          </button>
+        </form>
+      `}
+    </div>
+  `;
+}
+
+function fillDemoCredentials() {
+  const emailInput = document.getElementById('authEmail');
+  const passInput = document.getElementById('authPassword');
+  if (emailInput && passInput) {
+    emailInput.value = 'demo@saniapet.cl';
+    passInput.value = 'demo123';
+    showToast('Credenciales demo autocompletadas', 'info');
+  }
+}
+
+async function handleLoginSubmit(e) {
+  e.preventDefault();
+  const btn = document.getElementById('authSubmitBtn');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Verificando...';
+  }
+
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.detail || 'Error al iniciar sesión');
+    }
+
+    authToken = data.token;
+    currentUser = data.user;
+    localStorage.setItem('sania_auth_token', authToken);
+
+    authOverlay.style.display = 'none';
+    showToast(`¡Bienvenido/a, ${currentUser.nombre}!`, 'success');
+    await loadPets();
+  } catch (err) {
+    showToast(err.message, 'danger');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Ingresar a mi Ficha';
+    }
+  }
+}
+
+async function handleRegisterSubmit(e) {
+  e.preventDefault();
+  const btn = document.getElementById('regSubmitBtn');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Creando cuenta...';
+  }
+
+  const nombre = document.getElementById('regNombre').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const telefono = document.getElementById('regTelefono').value.trim();
+  const password = document.getElementById('regPassword').value;
+
+  try {
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nombre, email, telefono, password })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.detail || 'Error al registrar cuenta');
+    }
+
+    authToken = data.token;
+    currentUser = data.user;
+    localStorage.setItem('sania_auth_token', authToken);
+
+    authOverlay.style.display = 'none';
+    showToast(`¡Cuenta creada con éxito! Bienvenido/a, ${currentUser.nombre}`, 'success');
+    await loadPets();
+  } catch (err) {
+    showToast(err.message, 'danger');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Crear mi Cuenta Gratuita';
+    }
+  }
+}
+
+async function handleLogout() {
+  if (authToken) {
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      });
+    } catch (e) {
+      console.warn('Logout API failed:', e);
+    }
+  }
+
+  authToken = null;
+  currentUser = null;
+  localStorage.removeItem('sania_auth_token');
+  showToast('Has cerrado sesión correctamente', 'info');
+  renderAuthScreen('login');
+}
 
 // ----------------------------------------------------
 // Core UX Notifications & Dialogs
@@ -132,9 +340,7 @@ function getRelativeTimeBadge(dateStr) {
   }
 }
 
-// ----------------------------------------------------
-// File Upload Helper (Production Ready)
-// ----------------------------------------------------
+// File Upload Helper
 async function uploadFileToServer(fileInput) {
   if (!fileInput || !fileInput.files || fileInput.files.length === 0) return null;
   const file = fileInput.files[0];
@@ -182,12 +388,10 @@ function toggleTheme() {
 function switchTab(tab) {
   activeTab = tab;
   
-  // Update desktop sidebar active state
   document.querySelectorAll('.desktop-sidebar .sidebar-link').forEach(btn => {
     btn.classList.toggle('active', btn.getAttribute('data-tab') === tab);
   });
 
-  // Update mobile bottom bar active state
   document.querySelectorAll('.mobile-bottom-bar .bar-tab-btn').forEach(btn => {
     btn.classList.toggle('active', btn.getAttribute('data-tab') === tab);
   });
@@ -449,7 +653,7 @@ function renderDashboard() {
   `;
 }
 
-// 2. Consultas View (With Back button & live filter)
+// 2. Consultas View
 function renderConsultas() {
   const p = activePet;
   const q = searchQueries.consultas.toLowerCase();
@@ -489,7 +693,7 @@ function renderConsultas() {
   `;
 }
 
-// 3. Vacunas View (With relative time badges)
+// 3. Vacunas View
 function renderVacunas() {
   const p = activePet;
   const q = searchQueries.vacunas.toLowerCase();
@@ -743,15 +947,35 @@ function renderAlertas() {
   `;
 }
 
-// 11. Perfil View
+// 11. Perfil View (With Authenticated User Section & Logout)
 function renderPerfil() {
   const p = activePet;
   const owner = p.propietario || {};
+  const user = currentUser || { nombre: 'Tutor Sania Pet', email: 'demo@saniapet.cl' };
+
   mainContent.innerHTML = `
     <div class="subview-nav-header">
       <button class="btn-back-link" onclick="switchTab('dashboard')">‹ Volver al Inicio</button>
-      <span class="subview-title">Perfil & Tutor</span>
+      <span class="subview-title">Perfil & Cuenta</span>
       <span></span>
+    </div>
+
+    <!-- User Account Card (Auth Info & Logout) -->
+    <div class="card-section" style="border-left: 4px solid var(--secondary);">
+      <div class="card-section-header">
+        <div class="card-section-title">
+          <span>👤</span>
+          <span>Cuenta de Usuario Activa</span>
+        </div>
+      </div>
+      <div style="font-size:13px; line-height:1.6; margin-bottom:0.75rem;">
+        <div><strong>Usuario:</strong> ${escapeHtml(user.nombre)}</div>
+        <div><strong>Correo:</strong> ${escapeHtml(user.email)}</div>
+      </div>
+      <button class="btn-logout" onclick="handleLogout()">
+        ${Icons.logout}
+        <span>Cerrar Sesión</span>
+      </button>
     </div>
 
     <div class="card-section">
@@ -1538,7 +1762,7 @@ async function handleCreateNewPet(e) {
     sexo: 'Macho',
     peso_actual: '10 kg',
     foto: photoUrl,
-    propietario: { nombre: 'Tutor Sania Pet' }
+    propietario: { nombre: currentUser ? currentUser.nombre : 'Tutor Sania Pet' }
   };
 
   try {
@@ -1736,4 +1960,4 @@ function escapeHtml(str) {
 
 // Boot Initialization
 initTheme();
-loadPets();
+checkAuthAndBoot();
