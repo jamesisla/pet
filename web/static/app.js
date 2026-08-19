@@ -4,6 +4,15 @@ let activePetId = 'luna';
 let activePet = null;
 let activeTab = 'dashboard';
 
+// Search filter state
+let searchQueries = {
+  consultas: '',
+  vacunas: '',
+  desparasitaciones: '',
+  medicamentos: '',
+  diario: ''
+};
+
 // DOM Elements
 const headerPetAvatar = document.getElementById('headerPetAvatar');
 const headerPetName = document.getElementById('headerPetName');
@@ -11,6 +20,98 @@ const mainContent = document.getElementById('mainContent');
 const bottomAlertBadge = document.getElementById('bottomAlertBadge');
 const modalBackdrop = document.getElementById('modalBackdrop');
 const modalCard = document.getElementById('modalCard');
+const toastContainer = document.getElementById('toastContainer');
+
+// ----------------------------------------------------
+// UX Enhancement 1: Non-Blocking Toast Notifications
+// ----------------------------------------------------
+function showToast(message, type = 'success') {
+  const toast = document.createElement('div');
+  toast.className = `toast-item ${type}`;
+  
+  let icon = '✓';
+  if (type === 'danger') icon = '✕';
+  if (type === 'info') icon = 'ℹ';
+
+  toast.innerHTML = `
+    <span style="font-size:16px; font-weight:900;">${icon}</span>
+    <span>${escapeHtml(message)}</span>
+  `;
+
+  toastContainer.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(-10px)';
+    setTimeout(() => toast.remove(), 250);
+  }, 3200);
+}
+
+// ----------------------------------------------------
+// UX Enhancement 2: Sleek In-App Confirm Dialog
+// ----------------------------------------------------
+function showConfirmDialog({ title, message, confirmText = 'Eliminar', onConfirm }) {
+  modalCard.innerHTML = `
+    <div class="sheet-drag-handle"></div>
+    <button class="sheet-close-btn" onclick="closeModal()">✕</button>
+    <div class="confirm-box">
+      <div class="confirm-icon">🗑️</div>
+      <h3 class="confirm-title">${escapeHtml(title)}</h3>
+      <p class="confirm-msg">${escapeHtml(message)}</p>
+      <div class="confirm-actions">
+        <button class="btn-action-primary" style="background:var(--bg-surface); color:var(--text-main);" onclick="closeModal()">
+          Cancelar
+        </button>
+        <button class="btn-action-primary" style="background:var(--danger);" id="confirmModalBtn">
+          ${escapeHtml(confirmText)}
+        </button>
+      </div>
+    </div>
+  `;
+  modalBackdrop.style.display = 'flex';
+
+  document.getElementById('confirmModalBtn').addEventListener('click', async () => {
+    closeModal();
+    if (onConfirm) await onConfirm();
+  });
+}
+
+// ----------------------------------------------------
+// UX Enhancement 3: Dynamic Relative Time Calculation
+// ----------------------------------------------------
+function getRelativeTimeBadge(dateStr) {
+  if (!dateStr || dateStr === 'N/A') return '';
+  
+  // Format expectation: DD/MM/YYYY
+  const parts = dateStr.split('/');
+  if (parts.length !== 3) return `<span class="expiry-pill expiry-green">${escapeHtml(dateStr)}</span>`;
+
+  const targetDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const diffTime = targetDate - today;
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) {
+    const daysAgo = Math.abs(diffDays);
+    if (daysAgo > 30) {
+      const months = Math.floor(daysAgo / 30);
+      return `<span class="expiry-pill expiry-red">⚠️ Vencida hace ${months} ${months === 1 ? 'mes' : 'meses'}</span>`;
+    }
+    return `<span class="expiry-pill expiry-red">⚠️ Vencida hace ${daysAgo} d</span>`;
+  } else if (diffDays === 0) {
+    return `<span class="expiry-pill expiry-amber">⏰ Vence hoy</span>`;
+  } else if (diffDays <= 15) {
+    return `<span class="expiry-pill expiry-amber">⏰ Vence en ${diffDays} días</span>`;
+  } else if (diffDays <= 45) {
+    return `<span class="expiry-pill expiry-green">🗓️ En 1 mes</span>`;
+  } else {
+    const months = Math.round(diffDays / 30);
+    return `<span class="expiry-pill expiry-green">✓ En ${months} meses</span>`;
+  }
+}
 
 // Theme Management
 function initTheme() {
@@ -23,6 +124,7 @@ function toggleTheme() {
   const next = current === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', next);
   localStorage.setItem('sania_theme', next);
+  showToast(`Tema ${next === 'dark' ? 'Oscuro' : 'Claro'} activado`, 'info');
 }
 
 // Navigation & Tab Switching
@@ -42,7 +144,7 @@ function switchTab(tab) {
   renderCurrentView();
 }
 
-// Smart Contextual Action Click (User Requirement)
+// Smart Contextual Action Click
 function handleSmartActionClick() {
   switch (activeTab) {
     case 'vacunas':
@@ -77,7 +179,6 @@ function handleSmartActionClick() {
       break;
     case 'dashboard':
     default:
-      // When on home/dashboard, open the "¿Qué deseas registrar?" bottom sheet menu (2.png)
       openBottomSheetMenu();
       break;
   }
@@ -170,13 +271,13 @@ function renderCurrentView() {
   }
 }
 
-// 1. Dashboard View (Exact 1.png Layout & Style)
+// 1. Dashboard View
 function renderDashboard() {
   const p = activePet;
   const activeAlerts = (p.alertas || []).filter(a => !a.estado || a.estado === 'activa');
 
   mainContent.innerHTML = `
-    <!-- Ultra-Compact Active Alerts Container (Takes minimum vertical space) -->
+    <!-- Ultra-Compact Active Alerts Container (Minimum Vertical Space) -->
     ${activeAlerts.length > 0 ? `
       <div class="alerts-compact-container">
         ${activeAlerts.map(a => `
@@ -197,7 +298,10 @@ function renderDashboard() {
     <div class="ficha-medica-card">
       <div class="ficha-top-row">
         <span class="ficha-badge">Ficha Médica</span>
-        <button class="ficha-arrow-btn" onclick="switchTab('perfil')" title="Ver Perfil Completo">›</button>
+        <div class="ficha-top-actions">
+          <button class="ficha-action-btn" onclick="openDigitalPassportModal()" title="Carnet Digital / Código QR">🪪</button>
+          <button class="ficha-action-btn" onclick="switchTab('perfil')" title="Ver Perfil Completo">›</button>
+        </div>
       </div>
 
       <div class="ficha-pet-name">${escapeHtml(p.nombre)}</div>
@@ -218,7 +322,9 @@ function renderDashboard() {
         </div>
         <div>
           <div class="ficha-field-label">Clínica Frecuente</div>
-          <div class="ficha-field-val">${escapeHtml(p.clinica_frecuente || 'Hospital Veterinario Sania...')}</div>
+          <a href="tel:+56912345678" class="ficha-field-val clickable" title="Llamar a la clínica">
+            📞 ${escapeHtml(p.clinica_frecuente || 'Hospital Veterinario...')}
+          </a>
         </div>
       </div>
     </div>
@@ -276,20 +382,28 @@ function renderDashboard() {
   `;
 }
 
-// 2. Consultas View
+// 2. Consultas View (With Back button & live filter)
 function renderConsultas() {
   const p = activePet;
-  mainContent.innerHTML = `
-    <div class="card-section">
-      <div class="card-section-header">
-        <div class="card-section-title">
-          <span>🩺</span>
-          <span>Consultas & Diagnósticos</span>
-        </div>
-        <button class="btn-action-primary" onclick="openAddRecordModal('diagnostico')">+ Registrar</button>
-      </div>
+  const q = searchQueries.consultas.toLowerCase();
+  const list = (p.diagnosticos || []).filter(d => 
+    !q || d.descripcion.toLowerCase().includes(q) || d.tipo.toLowerCase().includes(q) || (d.doctor && d.doctor.toLowerCase().includes(q))
+  );
 
-      ${(p.diagnosticos && p.diagnosticos.length > 0) ? p.diagnosticos.map(d => `
+  mainContent.innerHTML = `
+    <div class="subview-nav-header">
+      <button class="btn-back-link" onclick="switchTab('dashboard')">‹ Volver al Inicio</button>
+      <span class="subview-title">🩺 Consultas</span>
+      <button class="btn-action-primary" onclick="openAddRecordModal('diagnostico')">+ Registrar</button>
+    </div>
+
+    <div class="search-filter-wrap">
+      <span class="search-filter-icon">🔍</span>
+      <input type="text" class="search-filter-input" placeholder="Buscar consultas o diagnósticos..." value="${escapeHtml(searchQueries.consultas)}" oninput="handleSearchFilter('consultas', this.value)">
+    </div>
+
+    <div class="card-section">
+      ${list.length > 0 ? list.map(d => `
         <div class="clinical-record-card">
           <div class="clinical-record-top">
             <span class="badge-tag badge-blue">${escapeHtml(d.tipo)}</span>
@@ -299,44 +413,52 @@ function renderConsultas() {
             ${escapeHtml(d.descripcion)}
           </div>
           <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; color:var(--text-muted); margin-top:6px; border-top:1px solid var(--border-light); padding-top:6px;">
-            <span>👨‍⚕️ ${escapeHtml(d.doctor || 'Médico')}</span>
-            <button style="background:transparent; border:none; color:var(--danger); cursor:pointer;" onclick="deleteRecord('diagnostico', ${d.ID})">🗑️</button>
+            <span>👨‍⚕️ ${escapeHtml(d.doctor || 'Médico')} • ${escapeHtml(d.clinica || 'Clínica')}</span>
+            <button style="background:transparent; border:none; color:var(--danger); cursor:pointer; font-size:14px;" onclick="deleteRecord('diagnostico', ${d.ID})">🗑️</button>
           </div>
         </div>
-      `).join('') : '<p style="color:var(--text-muted); font-size:13px;">Sin consultas registradas.</p>'}
+      `).join('') : '<p style="color:var(--text-muted); font-size:13px; text-align:center; padding:1rem 0;">No se encontraron consultas registradas.</p>'}
     </div>
   `;
 }
 
-// 3. Vacunas View
+// 3. Vacunas View (With relative time badges)
 function renderVacunas() {
   const p = activePet;
-  mainContent.innerHTML = `
-    <div class="card-section">
-      <div class="card-section-header">
-        <div class="card-section-title">
-          <span>🛡️</span>
-          <span>Vacunas & Inmunización</span>
-        </div>
-        <button class="btn-action-primary" onclick="openAddRecordModal('vacuna')">+ Registrar</button>
-      </div>
+  const q = searchQueries.vacunas.toLowerCase();
+  const list = (p.vacunas || []).filter(v => 
+    !q || v.nombre.toLowerCase().includes(q) || (v.lote && v.lote.toLowerCase().includes(q))
+  );
 
-      ${(p.vacunas && p.vacunas.length > 0) ? p.vacunas.map(v => `
+  mainContent.innerHTML = `
+    <div class="subview-nav-header">
+      <button class="btn-back-link" onclick="switchTab('dashboard')">‹ Volver al Inicio</button>
+      <span class="subview-title">🛡️ Vacunas</span>
+      <button class="btn-action-primary" onclick="openAddRecordModal('vacuna')">+ Registrar</button>
+    </div>
+
+    <div class="search-filter-wrap">
+      <span class="search-filter-icon">🔍</span>
+      <input type="text" class="search-filter-input" placeholder="Buscar vacuna o lote..." value="${escapeHtml(searchQueries.vacunas)}" oninput="handleSearchFilter('vacunas', this.value)">
+    </div>
+
+    <div class="card-section">
+      ${list.length > 0 ? list.map(v => `
         <div class="clinical-record-card">
           <div class="clinical-record-top">
             <strong style="font-size:15px; color:var(--text-main);">${escapeHtml(v.nombre)}</strong>
-            <span class="badge-tag ${v.estado === 'Aplicada' ? 'badge-green' : 'badge-red'}">${escapeHtml(v.estado)}</span>
+            ${getRelativeTimeBadge(v.proxima_fecha)}
           </div>
-          <div style="font-size:12.5px; color:var(--text-muted); line-height:1.5;">
+          <div style="font-size:12.5px; color:var(--text-muted); line-height:1.5; margin-top:4px;">
             <div>📅 <strong>Aplicada:</strong> ${escapeHtml(v.fecha)}</div>
-            <div>🎯 <strong>Próxima dosis:</strong> ${escapeHtml(v.proxima_fecha || 'N/A')}</div>
+            <div>🎯 <strong>Próxima renovación:</strong> ${escapeHtml(v.proxima_fecha || 'N/A')}</div>
             <div>🏷️ <strong>Lote:</strong> ${escapeHtml(v.lote || 'N/A')}</div>
           </div>
-          <div style="display:flex; justify-content:flex-end; margin-top:4px;">
-            <button style="background:transparent; border:none; color:var(--danger); cursor:pointer;" onclick="deleteRecord('vacuna', ${v.ID})">🗑️ Eliminar</button>
+          <div style="display:flex; justify-content:flex-end; margin-top:6px; border-top:1px solid var(--border-light); padding-top:6px;">
+            <button style="background:transparent; border:none; color:var(--danger); cursor:pointer; font-size:13px; font-weight:700;" onclick="deleteRecord('vacuna', ${v.ID})">🗑️ Eliminar</button>
           </div>
         </div>
-      `).join('') : '<p style="color:var(--text-muted); font-size:13px;">Sin vacunas registradas.</p>'}
+      `).join('') : '<p style="color:var(--text-muted); font-size:13px; text-align:center; padding:1rem 0;">No se encontraron vacunas.</p>'}
     </div>
   `;
 }
@@ -345,30 +467,29 @@ function renderVacunas() {
 function renderDesparasitaciones() {
   const p = activePet;
   mainContent.innerHTML = `
-    <div class="card-section">
-      <div class="card-section-header">
-        <div class="card-section-title">
-          <span>🪲</span>
-          <span>Desparasitaciones</span>
-        </div>
-        <button class="btn-action-primary" onclick="openAddRecordModal('desparasitacion')">+ Registrar</button>
-      </div>
+    <div class="subview-nav-header">
+      <button class="btn-back-link" onclick="switchTab('dashboard')">‹ Volver al Inicio</button>
+      <span class="subview-title">🪲 Desparasitaciones</span>
+      <button class="btn-action-primary" onclick="openAddRecordModal('desparasitacion')">+ Registrar</button>
+    </div>
 
+    <div class="card-section">
       ${(p.desparasitaciones && p.desparasitaciones.length > 0) ? p.desparasitaciones.map(d => `
         <div class="clinical-record-card">
           <div class="clinical-record-top">
             <strong style="font-size:15px; color:var(--text-main);">${escapeHtml(d.producto)}</strong>
             <span class="badge-tag badge-amber">${escapeHtml(d.tipo)}</span>
           </div>
-          <div style="font-size:12.5px; color:var(--text-muted); line-height:1.5;">
+          <div style="font-size:12.5px; color:var(--text-muted); line-height:1.5; margin-top:4px;">
             <div>📅 <strong>Fecha:</strong> ${escapeHtml(d.fecha)} • 🎯 <strong>Próxima:</strong> ${escapeHtml(d.proxima_fecha || 'N/A')}</div>
             <div>💊 <strong>Dosis:</strong> ${escapeHtml(d.dosis || '1 dosis')} (Peso: ${escapeHtml(d.peso_mascota || '-')})</div>
+            <div style="margin-top:2px;">${getRelativeTimeBadge(d.proxima_fecha)}</div>
           </div>
-          <div style="display:flex; justify-content:flex-end; margin-top:4px;">
-            <button style="background:transparent; border:none; color:var(--danger); cursor:pointer;" onclick="deleteRecord('desparasitacion', ${d.ID})">🗑️ Eliminar</button>
+          <div style="display:flex; justify-content:flex-end; margin-top:6px; border-top:1px solid var(--border-light); padding-top:6px;">
+            <button style="background:transparent; border:none; color:var(--danger); cursor:pointer; font-size:13px; font-weight:700;" onclick="deleteRecord('desparasitacion', ${d.ID})">🗑️ Eliminar</button>
           </div>
         </div>
-      `).join('') : '<p style="color:var(--text-muted); font-size:13px;">Sin desparasitaciones registradas.</p>'}
+      `).join('') : '<p style="color:var(--text-muted); font-size:13px; text-align:center; padding:1rem 0;">Sin desparasitaciones registradas.</p>'}
     </div>
   `;
 }
@@ -377,30 +498,28 @@ function renderDesparasitaciones() {
 function renderMedicamentos() {
   const p = activePet;
   mainContent.innerHTML = `
-    <div class="card-section">
-      <div class="card-section-header">
-        <div class="card-section-title">
-          <span>💊</span>
-          <span>Tratamientos & Medicamentos</span>
-        </div>
-        <button class="btn-action-primary" onclick="openAddRecordModal('medicamento')">+ Registrar</button>
-      </div>
+    <div class="subview-nav-header">
+      <button class="btn-back-link" onclick="switchTab('dashboard')">‹ Volver al Inicio</button>
+      <span class="subview-title">💊 Tratamientos</span>
+      <button class="btn-action-primary" onclick="openAddRecordModal('medicamento')">+ Registrar</button>
+    </div>
 
+    <div class="card-section">
       ${(p.medicamentos && p.medicamentos.length > 0) ? p.medicamentos.map(m => `
         <div class="clinical-record-card">
           <div class="clinical-record-top">
             <strong style="font-size:15px; color:var(--text-main);">${escapeHtml(m.nombre)}</strong>
             <span class="badge-tag ${m.estado === 'Activo' ? 'badge-green' : 'badge-blue'}">${escapeHtml(m.estado)}</span>
           </div>
-          <div style="font-size:12.5px; color:var(--text-muted); line-height:1.5;">
+          <div style="font-size:12.5px; color:var(--text-muted); line-height:1.5; margin-top:4px;">
             <div>💊 <strong>Dosis:</strong> ${escapeHtml(m.dosis)} • ⏰ ${escapeHtml(m.frecuencia)}</div>
             <div>⏳ <strong>Duración:</strong> ${escapeHtml(m.duracion)}</div>
           </div>
-          <div style="display:flex; justify-content:flex-end; margin-top:4px;">
-            <button style="background:transparent; border:none; color:var(--danger); cursor:pointer;" onclick="deleteRecord('medicamento', ${m.ID})">🗑️ Eliminar</button>
+          <div style="display:flex; justify-content:flex-end; margin-top:6px; border-top:1px solid var(--border-light); padding-top:6px;">
+            <button style="background:transparent; border:none; color:var(--danger); cursor:pointer; font-size:13px; font-weight:700;" onclick="deleteRecord('medicamento', ${m.ID})">🗑️ Eliminar</button>
           </div>
         </div>
-      `).join('') : '<p style="color:var(--text-muted); font-size:13px;">Sin tratamientos registrados.</p>'}
+      `).join('') : '<p style="color:var(--text-muted); font-size:13px; text-align:center; padding:1rem 0;">Sin tratamientos registrados.</p>'}
     </div>
   `;
 }
@@ -409,27 +528,25 @@ function renderMedicamentos() {
 function renderLaboratorios() {
   const p = activePet;
   mainContent.innerHTML = `
-    <div class="card-section">
-      <div class="card-section-header">
-        <div class="card-section-title">
-          <span>🧪</span>
-          <span>Exámenes de Laboratorio</span>
-        </div>
-        <button class="btn-action-primary" onclick="openAddRecordModal('laboratorio')">+ Registrar</button>
-      </div>
+    <div class="subview-nav-header">
+      <button class="btn-back-link" onclick="switchTab('dashboard')">‹ Volver al Inicio</button>
+      <span class="subview-title">🧪 Laboratorios</span>
+      <button class="btn-action-primary" onclick="openAddRecordModal('laboratorio')">+ Registrar</button>
+    </div>
 
+    <div class="card-section">
       ${(p.laboratorios && p.laboratorios.length > 0) ? p.laboratorios.map(lab => `
         <div class="clinical-record-card" style="cursor:pointer;" onclick="openLabDetailsModal('${lab.id}')">
           <div class="clinical-record-top">
             <strong style="font-size:15px; color:var(--text-main);">${escapeHtml(lab.examen)}</strong>
             <span style="font-size:12px; color:var(--text-light); font-weight:700;">${escapeHtml(lab.fecha)}</span>
           </div>
-          <p style="font-size:12.5px; color:var(--text-muted);">${escapeHtml(lab.laboratorio)}</p>
+          <p style="font-size:12.5px; color:var(--text-muted); margin-top:2px;">${escapeHtml(lab.laboratorio)}</p>
           <div style="font-size:12px; color:var(--secondary); font-weight:800; margin-top:4px;">
             👉 Ver desglose de ${lab.resultados ? lab.resultados.length : 0} parámetros analizados
           </div>
         </div>
-      `).join('') : '<p style="color:var(--text-muted); font-size:13px;">Sin exámenes de laboratorio.</p>'}
+      `).join('') : '<p style="color:var(--text-muted); font-size:13px; text-align:center; padding:1rem 0;">Sin exámenes de laboratorio.</p>'}
     </div>
   `;
 }
@@ -438,15 +555,13 @@ function renderLaboratorios() {
 function renderImagenes() {
   const p = activePet;
   mainContent.innerHTML = `
-    <div class="card-section">
-      <div class="card-section-header">
-        <div class="card-section-title">
-          <span>🩻</span>
-          <span>Imágenes Médicas</span>
-        </div>
-        <button class="btn-action-primary" onclick="openAddRecordModal('imagen')">+ Registrar</button>
-      </div>
+    <div class="subview-nav-header">
+      <button class="btn-back-link" onclick="switchTab('dashboard')">‹ Volver al Inicio</button>
+      <span class="subview-title">🩻 Imágenes</span>
+      <button class="btn-action-primary" onclick="openAddRecordModal('imagen')">+ Registrar</button>
+    </div>
 
+    <div class="card-section">
       ${(p.imagenes && p.imagenes.length > 0) ? p.imagenes.map(img => `
         <div class="clinical-record-card" style="cursor:pointer;" onclick="openImageDetailsModal(${img.ID})">
           <div class="clinical-record-top">
@@ -459,7 +574,7 @@ function renderImagenes() {
             👉 Ver radiografía e informe radiológico
           </div>
         </div>
-      `).join('') : '<p style="color:var(--text-muted); font-size:13px;">Sin imágenes registradas.</p>'}
+      `).join('') : '<p style="color:var(--text-muted); font-size:13px; text-align:center; padding:1rem 0;">Sin imágenes registradas.</p>'}
     </div>
   `;
 }
@@ -467,17 +582,25 @@ function renderImagenes() {
 // 8. Diario de Salud View
 function renderDiario() {
   const p = activePet;
-  mainContent.innerHTML = `
-    <div class="card-section">
-      <div class="card-section-header">
-        <div class="card-section-title">
-          <span>📋</span>
-          <span>Diario de Salud & Síntomas</span>
-        </div>
-        <button class="btn-action-primary" onclick="openAddRecordModal('sintoma')">+ Registrar</button>
-      </div>
+  const q = searchQueries.diario.toLowerCase();
+  const list = (p.diario || []).filter(d => 
+    !q || d.sintoma.toLowerCase().includes(q) || (d.nota && d.nota.toLowerCase().includes(q))
+  );
 
-      ${(p.diario && p.diario.length > 0) ? p.diario.map(d => `
+  mainContent.innerHTML = `
+    <div class="subview-nav-header">
+      <button class="btn-back-link" onclick="switchTab('dashboard')">‹ Volver al Inicio</button>
+      <span class="subview-title">📋 Diario de Salud</span>
+      <button class="btn-action-primary" onclick="openAddRecordModal('sintoma')">+ Registrar</button>
+    </div>
+
+    <div class="search-filter-wrap">
+      <span class="search-filter-icon">🔍</span>
+      <input type="text" class="search-filter-input" placeholder="Buscar síntomas o notas..." value="${escapeHtml(searchQueries.diario)}" oninput="handleSearchFilter('diario', this.value)">
+    </div>
+
+    <div class="card-section">
+      ${list.length > 0 ? list.map(d => `
         <div class="clinical-record-card">
           <div class="clinical-record-top">
             <strong style="font-size:15px; color:var(--text-main);">${escapeHtml(d.sintoma)}</strong>
@@ -486,10 +609,10 @@ function renderDiario() {
           <p style="font-size:13px; color:var(--text-muted); margin-top:4px;">${escapeHtml(d.nota || 'Sin observaciones')}</p>
           <div style="display:flex; justify-content:space-between; align-items:center; font-size:11.5px; color:var(--text-light); border-top:1px solid var(--border-light); padding-top:6px; margin-top:4px;">
             <span>📅 ${escapeHtml(d.fecha)}</span>
-            <button style="background:transparent; border:none; color:var(--danger); cursor:pointer;" onclick="deleteRecord('sintoma', ${d.ID})">🗑️</button>
+            <button style="background:transparent; border:none; color:var(--danger); cursor:pointer; font-size:13px; font-weight:700;" onclick="deleteRecord('sintoma', ${d.ID})">🗑️ Eliminar</button>
           </div>
         </div>
-      `).join('') : '<p style="color:var(--text-muted); font-size:13px;">Sin síntomas anotados en el diario.</p>'}
+      `).join('') : '<p style="color:var(--text-muted); font-size:13px; text-align:center; padding:1rem 0;">No se encontraron síntomas anotados.</p>'}
     </div>
   `;
 }
@@ -498,15 +621,13 @@ function renderDiario() {
 function renderPeso() {
   const p = activePet;
   mainContent.innerHTML = `
-    <div class="card-section">
-      <div class="card-section-header">
-        <div class="card-section-title">
-          <span>⚖️</span>
-          <span>Control de Peso</span>
-        </div>
-        <button class="btn-action-primary" onclick="openAddRecordModal('peso')">+ Registrar</button>
-      </div>
+    <div class="subview-nav-header">
+      <button class="btn-back-link" onclick="switchTab('dashboard')">‹ Volver al Inicio</button>
+      <span class="subview-title">⚖️ Control de Peso</span>
+      <button class="btn-action-primary" onclick="openAddRecordModal('peso')">+ Registrar</button>
+    </div>
 
+    <div class="card-section">
       <div style="display:flex; flex-direction:column; gap:0.5rem;">
         ${(p.peso_historial && p.peso_historial.length > 0) ? p.peso_historial.map(reg => `
           <div style="display:flex; justify-content:space-between; align-items:center; padding:0.65rem 0.85rem; background:var(--bg-surface); border-radius:var(--radius-sm);">
@@ -515,10 +636,10 @@ function renderPeso() {
             </div>
             <div style="display:flex; align-items:center; gap:0.75rem;">
               <span style="font-family:var(--font-mono); font-weight:900; color:var(--primary); font-size:15px;">${reg.peso} kg</span>
-              <button style="background:transparent; border:none; color:var(--danger); cursor:pointer;" onclick="deleteRecord('peso', ${reg.ID})">🗑️</button>
+              <button style="background:transparent; border:none; color:var(--danger); cursor:pointer; font-size:14px;" onclick="deleteRecord('peso', ${reg.ID})">🗑️</button>
             </div>
           </div>
-        `).join('') : '<p style="color:var(--text-muted); font-size:13px;">Sin pesajes registrados.</p>'}
+        `).join('') : '<p style="color:var(--text-muted); font-size:13px; text-align:center; padding:1rem 0;">Sin pesajes registrados.</p>'}
       </div>
     </div>
   `;
@@ -528,27 +649,27 @@ function renderPeso() {
 function renderAlertas() {
   const p = activePet;
   mainContent.innerHTML = `
-    <div class="card-section">
-      <div class="card-section-header">
-        <div class="card-section-title">
-          <span>🔔</span>
-          <span>Alertas & Recordatorios</span>
-        </div>
-        <button class="btn-action-primary" onclick="openAddRecordModal('alerta')">+ Nueva</button>
-      </div>
+    <div class="subview-nav-header">
+      <button class="btn-back-link" onclick="switchTab('dashboard')">‹ Volver al Inicio</button>
+      <span class="subview-title">🔔 Alertas</span>
+      <button class="btn-action-primary" onclick="openAddRecordModal('alerta')">+ Nueva</button>
+    </div>
 
+    <div class="card-section">
       ${(p.alertas && p.alertas.length > 0) ? p.alertas.map(a => `
-        <div class="alert-box ${a.tipo}" onclick="openAlertActionModal('${a.id}')">
-          <div class="alert-icon-wrap">
-            <span>${a.tipo === 'critica' ? '⚠️' : '🔔'}</span>
+        <div class="alert-compact-row ${a.tipo}" onclick="openAlertActionModal('${a.id}')" style="margin-bottom:0.65rem;">
+          <div class="alert-compact-left">
+            <div class="alert-compact-icon">
+              <span>${a.tipo === 'critica' ? '⚠️' : '🔔'}</span>
+            </div>
+            <div>
+              <div class="alert-compact-title">${escapeHtml(a.titulo)}</div>
+              <div style="font-size:11.5px; color:var(--text-muted); margin-top:2px;">${escapeHtml(a.descripcion)}</div>
+            </div>
           </div>
-          <div class="alert-content">
-            <div class="alert-title">${escapeHtml(a.titulo)}</div>
-            <div class="alert-desc">${escapeHtml(a.descripcion)}</div>
-          </div>
-          <span class="alert-tag">${escapeHtml(a.estado || 'Activa')}</span>
+          <span class="alert-compact-tag">${escapeHtml(a.estado || 'Activa')}</span>
         </div>
-      `).join('') : '<p style="color:var(--text-muted); font-size:13px;">Sin alertas activas.</p>'}
+      `).join('') : '<p style="color:var(--text-muted); font-size:13px; text-align:center; padding:1rem 0;">Sin alertas registradas.</p>'}
     </div>
   `;
 }
@@ -558,6 +679,12 @@ function renderPerfil() {
   const p = activePet;
   const owner = p.propietario || {};
   mainContent.innerHTML = `
+    <div class="subview-nav-header">
+      <button class="btn-back-link" onclick="switchTab('dashboard')">‹ Volver al Inicio</button>
+      <span class="subview-title">👤 Perfil & Tutor</span>
+      <span></span>
+    </div>
+
     <div class="card-section">
       <div class="card-section-header">
         <div class="card-section-title">
@@ -634,6 +761,14 @@ function renderPerfil() {
       </form>
     </div>
   `;
+}
+
+// Live Search Filter Handler
+function handleSearchFilter(key, query) {
+  searchQueries[key] = query;
+  if (key === 'consultas') renderConsultas();
+  if (key === 'vacunas') renderVacunas();
+  if (key === 'diario') renderDiario();
 }
 
 // ----------------------------------------------------
@@ -742,7 +877,7 @@ function openBottomSheetMenu() {
   modalBackdrop.style.display = 'flex';
 }
 
-// Add Record Modal with Immediate Specific Form
+// Add Record Modal
 function openAddRecordModal(type) {
   const now = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
   let fields = '';
@@ -1043,34 +1178,88 @@ async function handleSaveRecord(e, type) {
     });
     if (res.ok) {
       closeModal();
+      showToast('Registro guardado exitosamente', 'success');
       await loadActivePet(activePetId);
     }
   } catch (err) {
-    alert('Error al guardar: ' + err.message);
+    showToast('Error al guardar: ' + err.message, 'danger');
   }
 }
 
-// Delete Record
-async function deleteRecord(type, id) {
-  if (!confirm('¿Eliminar este registro clínico?')) return;
-  let url = `/api/pets/${activePetId}/`;
-  if (type === 'diagnostico') url += `diagnosticos/${id}`;
-  if (type === 'vacuna') url += `vacunas/${id}`;
-  if (type === 'desparasitacion') url += `desparasitaciones/${id}`;
-  if (type === 'medicamento') url += `medicamentos/${id}`;
-  if (type === 'sintoma') url += `sintomas/${id}`;
-  if (type === 'peso') url += `peso/${id}`;
-  if (type === 'laboratorio') url += `laboratorios/${id}`;
-  if (type === 'imagen') url += `imagenes/${id}`;
+// Delete Record with Smooth Confirm Dialog
+function deleteRecord(type, id) {
+  showConfirmDialog({
+    title: '¿Eliminar registro?',
+    message: 'Esta acción removerá el registro del historial clínico de la mascota.',
+    confirmText: 'Sí, Eliminar',
+    onConfirm: async () => {
+      let url = `/api/pets/${activePetId}/`;
+      if (type === 'diagnostico') url += `diagnosticos/${id}`;
+      if (type === 'vacuna') url += `vacunas/${id}`;
+      if (type === 'desparasitacion') url += `desparasitaciones/${id}`;
+      if (type === 'medicamento') url += `medicamentos/${id}`;
+      if (type === 'sintoma') url += `sintomas/${id}`;
+      if (type === 'peso') url += `peso/${id}`;
+      if (type === 'laboratorio') url += `laboratorios/${id}`;
+      if (type === 'imagen') url += `imagenes/${id}`;
 
-  try {
-    const res = await fetch(url, { method: 'DELETE' });
-    if (res.ok) {
-      await loadActivePet(activePetId);
+      try {
+        const res = await fetch(url, { method: 'DELETE' });
+        if (res.ok) {
+          showToast('Registro eliminado', 'info');
+          await loadActivePet(activePetId);
+        }
+      } catch (err) {
+        showToast('Error al eliminar: ' + err.message, 'danger');
+      }
     }
-  } catch (err) {
-    alert('Error al eliminar: ' + err.message);
-  }
+  });
+}
+
+// Digital Passport / Emergency QR Code Modal (UX Feature)
+function openDigitalPassportModal() {
+  const p = activePet;
+  const owner = p.propietario || {};
+  const activeAlerts = (p.alertas || []).filter(a => !a.estado || a.estado === 'activa');
+
+  modalCard.innerHTML = `
+    <div class="sheet-drag-handle"></div>
+    <button class="sheet-close-btn" onclick="closeModal()">✕</button>
+    <h3 class="sheet-title">🪪 Carnet Digital de Emergencia</h3>
+    
+    <div class="passport-card">
+      <div style="display:flex; align-items:center; justify-content:center; gap:0.75rem; margin-bottom:0.5rem;">
+        <img src="${p.foto}" style="width:52px; height:52px; border-radius:50%; object-fit:cover; border:2px solid #00AEEF;" onerror="this.src='/static/favicon.svg'">
+        <div style="text-align:left;">
+          <h4 style="font-size:18px; font-weight:900; margin:0;">${escapeHtml(p.nombre)}</h4>
+          <span style="font-size:12px; color:var(--text-muted);">${escapeHtml(p.especie)} • ${escapeHtml(p.raza)}</span>
+        </div>
+      </div>
+
+      <!-- Pure SVG QR Code Representation -->
+      <div class="passport-qr-wrap">
+        <svg width="130" height="130" viewBox="0 0 25 25" style="display:block; margin:0 auto;">
+          <rect width="25" height="25" fill="#ffffff"/>
+          <path d="M2 2h7v7H2V2zm2 2v3h3V4H4zm6-2h1v1h-1V2zm2 0h2v1h-2V2zm3 0h1v1h-1V2zm2 0h4v7h-4V2zm2 2v3h2V4h-2zM2 11h2v1H2v-1zm3 0h1v1H5v-1zm2 0h1v1H7v-1zm4 0h1v2h-1v-2zm3 0h1v1h-1v-1zm3 0h1v2h-1v-2zm3 0h3v1h-3v-1zm-17 3h1v1H3v-1zm2 0h2v1H5v-1zm4 0h1v1H9v-1zm7 0h1v1h-1v-1zm3 0h2v1h-2v-1zm-17 2h7v7H2v-7zm2 2v3h3v-3H4zm7-2h2v1h-2v-1zm3 0h1v1h-1v-1zm3 0h2v2h-1v-1h-1v-1zm-5 2h1v1h-1v-1zm3 0h1v2h-1v-2zm-3 2h2v1h-2v-1zm4 0h2v2h-1v-1h-1v-1z" fill="#0f172a"/>
+        </svg>
+        <span style="font-size:10px; font-weight:800; color:var(--text-muted); display:block; margin-top:4px;">ESCANEAR FICHA MÉDICA</span>
+      </div>
+
+      <div style="text-align:left; font-size:12px; line-height:1.6; background:var(--bg-card); padding:0.85rem; border-radius:var(--radius-md); border:1px solid var(--border-light);">
+        <div>🏷️ <strong>Microchip:</strong> ${escapeHtml(p.microchip || 'No registrado')}</div>
+        <div>👤 <strong>Tutor:</strong> ${escapeHtml(owner.nombre || 'Sin registrar')} (${escapeHtml(owner.telefono || 'Sin teléfono')})</div>
+        <div>🏥 <strong>Clínica:</strong> ${escapeHtml(p.clinica_frecuente || 'Sin clínica asignada')}</div>
+        ${activeAlerts.length > 0 ? `
+          <div style="color:var(--danger); font-weight:800; margin-top:4px;">
+            ⚠️ <strong>Alertas:</strong> ${activeAlerts.map(a => a.titulo).join(', ')}
+          </div>
+        ` : ''}
+      </div>
+    </div>
+
+    <button class="btn-action-primary" style="width:100%; padding:0.75rem;" onclick="closeModal()">Cerrar Carnet</button>
+  `;
+  modalBackdrop.style.display = 'flex';
 }
 
 // Pet Switcher Dropdown Modal
@@ -1156,11 +1345,12 @@ async function handleCreateNewPet(e) {
     if (res.ok) {
       const created = await res.json();
       closeModal();
+      showToast(`¡Ficha de ${created.nombre} creada con éxito!`, 'success');
       await loadPets();
       await loadActivePet(created.id);
     }
   } catch (err) {
-    alert('Error al registrar: ' + err.message);
+    showToast('Error al registrar: ' + err.message, 'danger');
   }
 }
 
@@ -1197,10 +1387,11 @@ async function handleAlertAction(alertId, action) {
     const res = await fetch(`/api/alertas/${alertId}/action?action=${action}`, { method: 'POST' });
     if (res.ok) {
       closeModal();
+      showToast(`Alerta ${action === 'solucionar' ? 'solucionada' : action === 'posponer' ? 'pospuesta' : 'descartada'}`, 'success');
       await loadActivePet(activePetId);
     }
   } catch (err) {
-    console.error(err);
+    showToast('Error: ' + err.message, 'danger');
   }
 }
 
@@ -1287,12 +1478,12 @@ async function handleSavePetProfile(e) {
       body: JSON.stringify(payload)
     });
     if (res.ok) {
-      alert('¡Perfil actualizado con éxito!');
+      showToast('¡Ficha médica actualizada!', 'success');
       await loadPets();
       await loadActivePet(activePetId);
     }
   } catch (err) {
-    alert('Error: ' + err.message);
+    showToast('Error: ' + err.message, 'danger');
   }
 }
 
@@ -1311,11 +1502,11 @@ async function handleSaveOwnerProfile(e) {
       body: JSON.stringify(payload)
     });
     if (res.ok) {
-      alert('¡Datos del tutor guardados!');
+      showToast('¡Datos del tutor guardados!', 'success');
       await loadActivePet(activePetId);
     }
   } catch (err) {
-    alert('Error: ' + err.message);
+    showToast('Error: ' + err.message, 'danger');
   }
 }
 
