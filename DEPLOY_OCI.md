@@ -3,7 +3,7 @@
 ### Instancia: `VM.Standard.E2.1.Micro` (1 OCPU, 1 GB RAM)
 ### Dominio: `pet.oci.lat`
 
-Esta guía te permite desplegar **Sania Pet v2** de forma nativa en tu servidor OCI, eliminando el overhead de contenedores (Docker) y reduciendo el consumo de memoria a **< 10 MB de RAM** con tiempos de respuesta menores a **2 ms**.
+Esta guía te permite desplegar **Sania Pet v0.1 (Estable)** de forma nativa en tu servidor OCI, eliminando el overhead de contenedores (Docker) y reduciendo el consumo de memoria a **< 10 MB de RAM** con tiempos de respuesta menores a **2 ms**.
 
 ---
 

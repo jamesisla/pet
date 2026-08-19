@@ -1,6 +1,6 @@
 #!/bin/sh
 # ==============================================================================
-# Sania Pet v2 — Disaster Recovery & Restore Script
+# Sania Pet v0.1 — Disaster Recovery & Restore Script
 # ==============================================================================
 set -e
 

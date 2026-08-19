@@ -126,7 +126,7 @@ func Run() {
 	})
 
 	// Handlers
-	healthHandler := handler.NewHealthHandler(cfg.AppName, "2.0.0")
+	healthHandler := handler.NewHealthHandler(cfg.AppName, cfg.AppVersion)
 	authHandler := handler.NewAuthHandler(userStore)
 	petHandler := handler.NewPetHandler(st, baseDir)
 
@@ -205,7 +205,7 @@ func Run() {
 	}()
 
 	addr := fmt.Sprintf(":%s", cfg.Port)
-	log.Printf("🌐 Sania Pet disponible en http://localhost:%s", cfg.Port)
+	log.Printf("🌐 Sania Pet (%s) disponible en http://localhost:%s", cfg.AppVersion, cfg.Port)
 	if err := app.Listen(addr); err != nil {
 		log.Printf("Servidor detenido: %v", err)
 	}

@@ -3,10 +3,11 @@ package config
 import "os"
 
 type Config struct {
-	AppName string
-	Port    string
-	AppEnv  string
-	DataDir string
+	AppName    string
+	AppVersion string
+	Port       string
+	AppEnv     string
+	DataDir    string
 }
 
 func Load() *Config {
@@ -20,6 +21,11 @@ func Load() *Config {
 		appName = "Sania Pet — Ficha Médica Veterinaria"
 	}
 
+	appVersion := os.Getenv("APP_VERSION")
+	if appVersion == "" {
+		appVersion = "v0.1"
+	}
+
 	appEnv := os.Getenv("APP_ENV")
 	if appEnv == "" {
 		appEnv = "development"
@@ -31,9 +37,10 @@ func Load() *Config {
 	}
 
 	return &Config{
-		AppName: appName,
-		Port:    port,
-		AppEnv:  appEnv,
-		DataDir: dataDir,
+		AppName:    appName,
+		AppVersion: appVersion,
+		Port:       port,
+		AppEnv:     appEnv,
+		DataDir:    dataDir,
 	}
 }

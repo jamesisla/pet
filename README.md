@@ -1,6 +1,6 @@
-# Sania Pet v2 — Ficha Médica Veterinaria Inteligente
+# Sania Pet v0.1 (Estable) — Ficha Médica Veterinaria Inteligente
 
-Aplicación monolítica ultraligera y de alto rendimiento para la gestión clínica completa de mascotas (perros, gatos, etc.), construida bajo el stack **Go 1.22+ + Fiber v2 + Web Vanilla Responsiva**.
+Aplicación monolítica ultraligera y de alto rendimiento para la gestión clínica completa de mascotas (perros, gatos, etc.), construida bajo el stack **Go 1.22+ + Fiber v2 + Web Vanilla Responsiva**. Versión estable **v0.1**.
 
 ---
 

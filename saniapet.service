@@ -12,6 +12,7 @@ RestartSec=3
 Environment=PORT=3000
 Environment=APP_ENV=production
 Environment=APP_NAME=Sania Pet — Ficha Medica Veterinaria
+Environment=APP_VERSION=v0.1
 LimitNOFILE=65535
 
 [Install]

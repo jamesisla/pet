@@ -1,6 +1,6 @@
 #!/bin/sh
 # ==============================================================================
-# Sania Pet v2 — Automated Backup Script for Oracle Cloud Infrastructure (OCI)
+# Sania Pet v0.1 — Automated Backup Script for Oracle Cloud Infrastructure (OCI)
 # ==============================================================================
 set -e
 
