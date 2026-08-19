@@ -38,10 +38,12 @@ func (h *AuthHandler) Register(c *fiber.Ctx) error {
 		Message: "Cuenta creada exitosamente",
 		Token:   token,
 		User: model.UserSummary{
-			ID:       user.ID,
-			Email:    user.Email,
-			Nombre:   user.Nombre,
-			Telefono: user.Telefono,
+			ID:        user.ID,
+			Email:     user.Email,
+			Nombre:    user.Nombre,
+			Rut:       user.Rut,
+			Telefono:  user.Telefono,
+			Direccion: user.Direccion,
 		},
 	})
 }
@@ -67,10 +69,12 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 		Message: "Sesión iniciada exitosamente",
 		Token:   token,
 		User: model.UserSummary{
-			ID:       user.ID,
-			Email:    user.Email,
-			Nombre:   user.Nombre,
-			Telefono: user.Telefono,
+			ID:        user.ID,
+			Email:     user.Email,
+			Nombre:    user.Nombre,
+			Rut:       user.Rut,
+			Telefono:  user.Telefono,
+			Direccion: user.Direccion,
 		},
 	})
 }
@@ -92,10 +96,45 @@ func (h *AuthHandler) Me(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(model.UserSummary{
-		ID:       user.ID,
-		Email:    user.Email,
-		Nombre:   user.Nombre,
-		Telefono: user.Telefono,
+		ID:        user.ID,
+		Email:     user.Email,
+		Nombre:    user.Nombre,
+		Rut:       user.Rut,
+		Telefono:  user.Telefono,
+		Direccion: user.Direccion,
+	})
+}
+
+// UpdateProfile updates authenticated tutor profile
+func (h *AuthHandler) UpdateProfile(c *fiber.Ctx) error {
+	token := extractToken(c)
+	if token == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"detail": "Token no proporcionado o sesión expirada",
+		})
+	}
+
+	var req model.UserProfileUpdateRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"detail": "Datos de perfil inválidos",
+		})
+	}
+
+	user, err := h.userStore.UpdateProfile(token, req)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"detail": err.Error(),
+		})
+	}
+
+	return c.JSON(model.UserSummary{
+		ID:        user.ID,
+		Email:     user.Email,
+		Nombre:    user.Nombre,
+		Rut:       user.Rut,
+		Telefono:  user.Telefono,
+		Direccion: user.Direccion,
 	})
 }
 

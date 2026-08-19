@@ -947,42 +947,79 @@ function renderAlertas() {
   `;
 }
 
-// 11. Perfil View (With Authenticated User Section & Logout)
+// 11. Perfil View (Unified Tutor & Pet Record)
 function renderPerfil() {
   const p = activePet;
   const owner = p.propietario || {};
-  const user = currentUser || { nombre: 'Tutor Sania Pet', email: 'demo@saniapet.cl' };
+  const user = currentUser || { 
+    nombre: owner.nombre || 'Tutor Sania Pet', 
+    email: owner.email || 'demo@saniapet.cl',
+    rut: owner.rut || '',
+    telefono: owner.telefono || '',
+    direccion: owner.direccion || ''
+  };
 
   mainContent.innerHTML = `
     <div class="subview-nav-header">
       <button class="btn-back-link" onclick="switchTab('dashboard')">‹ Volver al Inicio</button>
-      <span class="subview-title">Perfil & Cuenta</span>
+      <span class="subview-title">Perfil del Tutor & Mascota</span>
       <span></span>
     </div>
 
-    <!-- User Account Card (Auth Info & Logout) -->
+    <!-- Unified Tutor Profile & Account Card -->
     <div class="card-section" style="border-left: 4px solid var(--secondary);">
       <div class="card-section-header">
         <div class="card-section-title">
           <span>👤</span>
-          <span>Cuenta de Usuario Activa</span>
+          <span>Datos del Tutor (Titular de la Cuenta)</span>
         </div>
       </div>
-      <div style="font-size:13px; line-height:1.6; margin-bottom:0.75rem;">
-        <div><strong>Usuario:</strong> ${escapeHtml(user.nombre)}</div>
-        <div><strong>Correo:</strong> ${escapeHtml(user.email)}</div>
-      </div>
+
+      <form onsubmit="handleSaveTutorProfile(event)">
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Nombre Completo</label>
+            <input type="text" class="form-input" id="tNombre" value="${escapeHtml(user.nombre || '')}" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">RUT / Identificación</label>
+            <input type="text" class="form-input" id="tRut" value="${escapeHtml(user.rut || '')}" placeholder="12.345.678-K">
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Teléfono de Contacto</label>
+            <input type="tel" class="form-input" id="tTelefono" value="${escapeHtml(user.telefono || '')}" placeholder="+56 9 8765 4321">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Correo Electrónico</label>
+            <input type="email" class="form-input" id="tEmail" value="${escapeHtml(user.email || '')}" disabled style="opacity:0.8; cursor:not-allowed;">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Dirección Particular / Comuna</label>
+          <input type="text" class="form-input" id="tDireccion" value="${escapeHtml(user.direccion || '')}" placeholder="Av. Providencia 1234, Santiago">
+        </div>
+
+        <button type="submit" id="saveTutorBtn" class="btn-action-primary" style="width:100%; padding:0.75rem; margin-top:0.25rem;">
+          💾 Guardar Datos del Tutor
+        </button>
+      </form>
+
       <button class="btn-logout" onclick="handleLogout()">
         ${Icons.logout}
         <span>Cerrar Sesión</span>
       </button>
     </div>
 
+    <!-- Pet Identification Card -->
     <div class="card-section">
       <div class="card-section-header">
         <div class="card-section-title">
           <span>🐾</span>
-          <span>Ficha de Identificación</span>
+          <span>Ficha de la Mascota</span>
         </div>
       </div>
 
@@ -1037,32 +1074,6 @@ function renderPerfil() {
           <input type="text" class="form-input" id="pClinica" value="${escapeHtml(p.clinica_frecuente || '')}">
         </div>
         <button type="submit" class="btn-action-primary" style="width:100%; padding:0.75rem;">Guardar Cambios Mascota</button>
-      </form>
-    </div>
-
-    <div class="card-section">
-      <div class="card-section-header">
-        <div class="card-section-title">
-          <span>👤</span>
-          <span>Datos del Tutor / Dueño</span>
-        </div>
-      </div>
-      <form onsubmit="handleSaveOwnerProfile(event)">
-        <div class="form-group">
-          <label class="form-label">Nombre del Tutor</label>
-          <input type="text" class="form-input" id="oNombre" value="${escapeHtml(owner.nombre || '')}" required>
-        </div>
-        <div class="form-grid-2">
-          <div class="form-group">
-            <label class="form-label">Teléfono</label>
-            <input type="text" class="form-input" id="oTelefono" value="${escapeHtml(owner.telefono || '')}">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Email</label>
-            <input type="email" class="form-input" id="oEmail" value="${escapeHtml(owner.email || '')}">
-          </div>
-        </div>
-        <button type="submit" class="btn-action-primary" style="width:100%; padding:0.75rem;">Guardar Datos Dueño</button>
       </form>
     </div>
   `;
@@ -1927,26 +1938,63 @@ async function handleSavePetProfile(e) {
   }
 }
 
-async function handleSaveOwnerProfile(e) {
+async function handleSaveTutorProfile(e) {
   e.preventDefault();
-  const payload = {
-    nombre: document.getElementById('oNombre').value.trim(),
-    telefono: document.getElementById('oTelefono').value.trim(),
-    email: document.getElementById('oEmail').value.trim()
-  };
+  const btn = document.getElementById('saveTutorBtn');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Guardando...';
+  }
+
+  const nombre = document.getElementById('tNombre').value.trim();
+  const rut = document.getElementById('tRut').value.trim();
+  const telefono = document.getElementById('tTelefono').value.trim();
+  const direccion = document.getElementById('tDireccion').value.trim();
+
+  const payload = { nombre, rut, telefono, direccion };
 
   try {
-    const res = await fetch(`/api/pets/${activePetId}/propietario`, {
+    // 1. Update Auth User Account
+    if (authToken) {
+      const resAuth = await fetch('/api/auth/profile', {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify(payload)
+      });
+      if (resAuth.ok) {
+        currentUser = await resAuth.json();
+      }
+    }
+
+    // 2. Sync with Pet's Owner Profile
+    const resPet = await fetch(`/api/pets/${activePetId}/propietario`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+      body: JSON.stringify({
+        nombre: nombre,
+        rut: rut,
+        telefono: telefono,
+        email: currentUser ? currentUser.email : '',
+        direccion: direccion
+      })
     });
-    if (res.ok) {
-      showToast('¡Datos del tutor guardados!', 'success');
+
+    if (resPet.ok) {
+      showToast('¡Datos del tutor actualizados con éxito!', 'success');
       await loadActivePet(activePetId);
+    } else {
+      showToast('Error al actualizar datos del tutor', 'danger');
     }
   } catch (err) {
     showToast('Error: ' + err.message, 'danger');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '💾 Guardar Datos del Tutor';
+    }
   }
 }
 

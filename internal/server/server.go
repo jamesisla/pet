@@ -135,10 +135,11 @@ func Run() {
 	api.Get("/health", healthHandler.Health)
 	api.Post("/upload", petHandler.UploadFile)
 
-	// Auth Endpoints
+	// Auth Endpoints (Unified Tutor Account)
 	api.Post("/auth/register", authHandler.Register)
 	api.Post("/auth/login", authHandler.Login)
 	api.Get("/auth/me", authHandler.Me)
+	api.Put("/auth/profile", authHandler.UpdateProfile)
 	api.Post("/auth/logout", authHandler.Logout)
 
 	// Pets & Clinical Records API

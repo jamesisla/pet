@@ -71,13 +71,15 @@ func (s *UserStore) loadOrSeed() error {
 		}
 	}
 
-	// Default demo user
+	// Default demo user with complete tutor profile
 	demoUser := model.User{
 		ID:        "user_demo",
 		Email:     "demo@saniapet.cl",
 		Password:  hashPassword("demo123"),
 		Nombre:    "Jota Robles",
+		Rut:       "17.654.321-K",
 		Telefono:  "+56 9 8765 4321",
+		Direccion: "Av. Providencia 1234, Santiago",
 		CreatedAt: time.Now().Format("02/01/2006"),
 	}
 
@@ -122,7 +124,9 @@ func (s *UserStore) Register(req model.RegisterRequest) (*model.User, string, er
 		Email:     email,
 		Password:  hashPassword(req.Password),
 		Nombre:    strings.TrimSpace(req.Nombre),
+		Rut:       strings.TrimSpace(req.Rut),
 		Telefono:  strings.TrimSpace(req.Telefono),
+		Direccion: strings.TrimSpace(req.Direccion),
 		CreatedAt: time.Now().Format("02/01/2006"),
 	}
 
@@ -172,6 +176,34 @@ func (s *UserStore) ValidateToken(token string) (*model.User, bool) {
 	}
 
 	return &user, true
+}
+
+// UpdateProfile updates the tutor's unified information
+func (s *UserStore) UpdateProfile(token string, req model.UserProfileUpdateRequest) (*model.User, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	email, ok := s.tokens[token]
+	if !ok {
+		return nil, errors.New("sesión no válida")
+	}
+
+	user, exists := s.users[email]
+	if !exists {
+		return nil, errors.New("usuario no encontrado")
+	}
+
+	if strings.TrimSpace(req.Nombre) != "" {
+		user.Nombre = strings.TrimSpace(req.Nombre)
+	}
+	user.Rut = strings.TrimSpace(req.Rut)
+	user.Telefono = strings.TrimSpace(req.Telefono)
+	user.Direccion = strings.TrimSpace(req.Direccion)
+
+	s.users[email] = user
+	_ = s.saveUnsafe()
+
+	return &user, nil
 }
 
 // Logout removes token session
